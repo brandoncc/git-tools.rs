@@ -1,10 +1,36 @@
-use std::{env::current_dir, path::PathBuf};
+use std::{env::current_dir, path::PathBuf, str::Split};
 
 use crate::{
     tests::test_setup::{setup, teardown},
-    utils::{get_all_branch_names, get_all_worktree_names, get_current_branch_name},
-    Context, RepoType,
+    utils::{get_all_branch_names, get_current_branch_name},
+    Context, RepoType, commands::git_command,
 };
+
+fn clean_worktree_name(worktree: &String) -> Option<String> {
+    let mut parts: Split<char> = worktree.as_str().split('[');
+
+    if parts.clone().count() < 2 {
+        return None;
+    }
+
+    let name = parts
+        .next_back()
+        .expect("Couldn't get second item")
+        .strip_suffix(']')
+        .expect("Couldn't strip suffix")
+        .to_string();
+
+    Some(name)
+}
+
+pub fn get_all_worktree_names(repo_path: &PathBuf) -> Vec<String> {
+    git_command(vec!["worktree", "list"], PathBuf::from(repo_path))
+        .expect("Couldn't get worktree names")
+        .output
+        .iter()
+        .filter_map(clean_worktree_name)
+        .collect::<Vec<String>>()
+}
 
 pub fn assert_branches(context: Context, branches: Vec<String>) {
     assert_eq!(get_all_branch_names(&context.repo_path), branches);

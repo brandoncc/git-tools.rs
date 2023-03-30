@@ -1,4 +1,4 @@
-use std::{env, path::PathBuf, str::Split};
+use std::{env, path::PathBuf};
 
 use crate::{commands::git_command, CommandWorkingDirectory};
 
@@ -18,38 +18,12 @@ fn clean_branch_name(branch: &String) -> String {
     branch.split_whitespace().last().unwrap().to_string()
 }
 
-fn clean_worktree_name(worktree: &String) -> Option<String> {
-    let mut parts: Split<char> = worktree.as_str().split('[');
-
-    if parts.clone().count() < 2 {
-        return None;
-    }
-
-    let name = parts
-        .next_back()
-        .expect("Couldn't get second item")
-        .strip_suffix(']')
-        .expect("Couldn't strip suffix")
-        .to_string();
-
-    Some(name)
-}
-
 pub fn get_all_branch_names(repo_path: &PathBuf) -> Vec<String> {
     git_command(vec!["branch"], PathBuf::from(repo_path))
         .expect("Couldn't get branch names")
         .output
         .iter()
         .map(clean_branch_name)
-        .collect::<Vec<String>>()
-}
-
-pub fn get_all_worktree_names(repo_path: &PathBuf) -> Vec<String> {
-    git_command(vec!["worktree", "list"], PathBuf::from(repo_path))
-        .expect("Couldn't get worktree names")
-        .output
-        .iter()
-        .filter_map(clean_worktree_name)
         .collect::<Vec<String>>()
 }
 
