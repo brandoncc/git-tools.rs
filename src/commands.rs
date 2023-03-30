@@ -95,9 +95,12 @@ pub fn run_command(config: CommandConfiguration) -> CommandExecutionResult {
 }
 
 pub fn git_command(args: Vec<&str>, cwd: CommandWorkingDirectory) -> CommandExecutionResult {
+    let mut all_args: Vec<&str> = vec!["--no-pager"];
+    all_args.extend(args);
+
     run_command(CommandConfiguration {
         cmd: "git",
-        args: Some(args),
+        args: Some(all_args),
         cwd,
     })
 }
