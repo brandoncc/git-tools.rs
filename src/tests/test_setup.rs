@@ -1,4 +1,4 @@
-use std::{error::Error, process::Command, thread, time::Duration};
+use std::{error::Error, process::Command};
 
 pub fn setup(test_name: &str) -> Result<(), Box<dyn Error>> {
     // make sure we start with a clean slate even of a previous test failed
@@ -7,7 +7,6 @@ pub fn setup(test_name: &str) -> Result<(), Box<dyn Error>> {
     create_bare_repo(test_name)?;
     setup_worktrees(test_name)?;
     create_normal_repos(test_name)?;
-    // setup_normal_branches(test_name)?;
 
     Ok(())
 }
@@ -358,85 +357,6 @@ fn create_dirty_repo(test_name: &str) -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
-
-// fn setup_normal_branches(test_name: &str) -> Result<(), Box<dyn Error>> {
-//     Command::new("git")
-//         .arg("worktree")
-//         .arg("add")
-//         .arg("main")
-//         .current_dir(format!("dummy_repos/{}/clean_repo", test_name))
-//         .output()?;
-//
-//     Command::new("git")
-//         .arg("worktree")
-//         .arg("add")
-//         .arg("dirty")
-//         .current_dir(format!("dummy_repos/{}/bare_repo", test_name))
-//         .output()?;
-//
-//     Command::new("touch")
-//         .arg("uncommitted-file")
-//         .current_dir(format!("dummy_repos/{}/bare_repo/dirty", test_name))
-//         .output()?;
-//
-//     Command::new("git")
-//         .arg("worktree")
-//         .arg("add")
-//         .arg("unmerged")
-//         .current_dir(format!("dummy_repos/{}/bare_repo", test_name))
-//         .output()?;
-//
-//     Command::new("touch")
-//         .arg("unmerged-file")
-//         .current_dir(format!("dummy_repos/{}/bare_repo/unmerged", test_name))
-//         .output()?;
-//
-//     Command::new("git")
-//         .arg("add")
-//         .arg("unmerged-file")
-//         .current_dir(format!("dummy_repos/{}/bare_repo/unmerged", test_name))
-//         .output()?;
-//
-//     Command::new("git")
-//         .arg("commit")
-//         .arg("-m")
-//         .arg("file that won't be merged")
-//         .current_dir(format!("dummy_repos/{}/bare_repo/unmerged", test_name))
-//         .output()?;
-//
-//     Command::new("git")
-//         .arg("worktree")
-//         .arg("add")
-//         .arg("merged")
-//         .current_dir(format!("dummy_repos/{}/bare_repo", test_name))
-//         .output()?;
-//
-//     Command::new("touch")
-//         .arg("merged-file")
-//         .current_dir(format!("dummy_repos/{}/bare_repo/merged", test_name))
-//         .output()?;
-//
-//     Command::new("git")
-//         .arg("add")
-//         .arg("merged-file")
-//         .current_dir(format!("dummy_repos/{}/bare_repo/merged", test_name))
-//         .output()?;
-//
-//     Command::new("git")
-//         .arg("commit")
-//         .arg("-m")
-//         .arg("file that will be merged")
-//         .current_dir(format!("dummy_repos/{}/bare_repo/merged", test_name))
-//         .output()?;
-//
-//     Command::new("git")
-//         .arg("merge")
-//         .arg("merged")
-//         .current_dir(format!("dummy_repos/{}/bare_repo/main", test_name))
-//         .output()?;
-//
-//     Ok(())
-// }
 
 pub fn teardown(test_name: &str) -> Result<(), Box<dyn Error>> {
     delete_dummy_repos(test_name)?;

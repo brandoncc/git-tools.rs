@@ -70,28 +70,6 @@ fn get_command() -> AvailableCommands {
 }
 
 fn get_repo_path(cwd: &CommandWorkingDirectory, repo_type: &RepoType) -> PathBuf {
-    // let result = run_command(CommandConfiguration::new(
-    //     "git",
-    //     Some(vec!["rev-parse", "--is-bare-repository"]),
-    //     cwd,
-    // ));
-    //
-    // let output = res
-    //     .expect("Error: command must be run from within a git repository")
-    //     .output
-    //     .first()
-    //     .unwrap()
-    //     .clone();
-    //
-    // match output {
-    //     "true" => false,
-    //     Err(res) => {
-    //         println!("res: {:?}", res);
-    //         println!("");
-    //         exit(1);
-    //     }
-    // }
-
     match repo_type {
         RepoType::Bare => {
             get_bare_root(cwd).expect("Expected to find a bare repo root, but didn't")

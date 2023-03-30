@@ -2,20 +2,10 @@ use std::process::Command;
 
 use crate::CommandWorkingDirectory;
 
-const GIT_MAIN_BRANCH_REGEX: &str = "a"; // \(^\*\s\|^\s\+\)\(main\|master\)$';
-const STRIP_GIT_BRANCH_SED_REGEX: &str = "a"; // 's/[\*\+ ]//g'
-const COMMAND_FIND_MERGED_BRANCHES: &str = "a"; // "$(git branch --merged "$main_branch" | grep -v "$GIT_MAIN_BRANCH_REGEX" | sed "$STRIP_GIT_BRANCH_SED_REGEX")"
-
 pub struct CommandConfiguration<'a> {
     cmd: &'a str,
     args: Option<Vec<&'a str>>,
     cwd: CommandWorkingDirectory,
-}
-
-impl<'a> CommandConfiguration<'a> {
-    pub fn new(cmd: &'a str, args: Option<Vec<&'a str>>, cwd: CommandWorkingDirectory) -> Self {
-        CommandConfiguration::<'a> { cmd, args, cwd }
-    }
 }
 
 #[derive(Debug)]
@@ -31,14 +21,6 @@ pub struct FailedCommandExecution {
 }
 
 pub type CommandExecutionResult = Result<SuccessfulCommandExecution, FailedCommandExecution>;
-
-pub fn list_directory(cwd: CommandWorkingDirectory) -> CommandExecutionResult {
-    run_command(CommandConfiguration {
-        cmd: "ls",
-        args: None,
-        cwd,
-    })
-}
 
 fn remove_empty_string_elements(items: Vec<&str>) -> Vec<String> {
     items

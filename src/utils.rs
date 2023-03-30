@@ -81,33 +81,6 @@ pub fn get_current_branch_name(repo_path: &PathBuf) -> String {
 
 pub fn is_bare_repo(cwd: &CommandWorkingDirectory) -> bool {
     get_bare_root(cwd).is_ok()
-
-    // if is_bare_root(cwd) {
-    //     return true;
-    // }
-
-    // let result = git_command(
-    //     vec!["rev-parse", "--is-bare-repository"],
-    //     cwd.clone()
-    // );
-    //
-    // if result.is_err() {
-    //     println!("Error: command must be run from within a git repository");
-    //     exit(result.unwrap_err().exit_code);
-    // }
-    //
-    // let output = result
-    //     .expect("Error: command must be run from within a git repository")
-    //     .output
-    //     .join("");
-    //
-    // return output == "true";
-}
-
-fn get_repo_toplevel(cwd: &CommandWorkingDirectory) -> PathBuf {
-    // let result = run_command()
-
-    PathBuf::from("/")
 }
 
 pub fn get_bare_root(cwd: &CommandWorkingDirectory) -> Result<PathBuf, String> {
@@ -139,10 +112,6 @@ pub fn get_bare_root(cwd: &CommandWorkingDirectory) -> Result<PathBuf, String> {
 }
 
 fn is_bare_root(path: &PathBuf) -> bool {
-    // let head_path = path.join("HEAD");
-    // let config_path = path.join("config");
-    // let worktrees_path = path.join("worktrees");
-
     match git_command(vec!["rev-parse", "--is-bare-repository"], path.clone()) {
         Ok(result) => result.output.join("") == "true",
         Err(_) => false,

@@ -5,7 +5,6 @@ use crate::commands::git_command;
 
 use self::test_helpers::run_test;
 use super::*;
-use std::process::Command;
 
 #[test]
 fn test_merged_branches_are_not_deleted_if_working_tree_is_not_clean() {
