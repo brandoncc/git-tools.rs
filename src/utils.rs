@@ -1,8 +1,4 @@
-use std::{
-    env,
-    path::PathBuf,
-    str::Split,
-};
+use std::{env, path::PathBuf, str::Split};
 
 use crate::{commands::git_command, CommandWorkingDirectory};
 
@@ -66,6 +62,16 @@ pub fn get_main_branch_name(repo_path: &PathBuf) -> String {
         .first()
         .expect("No main branch found")
         .to_owned()
+}
+
+pub fn get_current_branch_name(repo_path: &PathBuf) -> String {
+    git_command(vec!["branch", "--show-current"], repo_path.clone())
+        .expect("Couldn't get current branch")
+        .output
+        .iter()
+        .next()
+        .expect("No output found")
+        .to_string()
 }
 
 pub fn is_bare_repo(cwd: &CommandWorkingDirectory) -> bool {

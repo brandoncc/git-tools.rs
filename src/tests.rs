@@ -1,6 +1,8 @@
 mod test_helpers;
 mod test_setup;
 
+use crate::commands::git_command;
+
 use self::test_helpers::run_test;
 use super::*;
 use std::process::Command;
@@ -67,11 +69,8 @@ fn test_deleting_current_head_branch_leaves_repo_with_main_branch_checked_out() 
         "clean_repo",
         RepoType::Normal,
         |context| {
-            Command::new("git")
-                .arg("checkout")
-                .arg("merged")
-                .status()
-                .expect("failed to checkout merged branch");
+            git_command(vec!["checkout", "merged"], context.repo_path.clone())
+                .expect("Failed to checkout merged branch");
 
             test_helpers::assert_current_branch(&context, "merged".to_string());
 
@@ -89,11 +88,8 @@ fn test_not_deleting_current_head_branch_leaves_repo_with_the_same_branch_checke
         "clean_repo",
         RepoType::Normal,
         |context| {
-            Command::new("git")
-                .arg("checkout")
-                .arg("unmerged")
-                .status()
-                .expect("failed to checkout merged branch");
+            git_command(vec!["checkout", "unmerged"], context.repo_path.clone())
+                .expect("Failed to checkout unmerged branch");
 
             test_helpers::assert_current_branch(&context, "unmerged".to_string());
 

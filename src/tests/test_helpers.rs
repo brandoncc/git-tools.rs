@@ -1,9 +1,8 @@
-
-use std::{env::current_dir, path::PathBuf, process::Command};
+use std::{env::current_dir, path::PathBuf};
 
 use crate::{
     tests::test_setup::{setup, teardown},
-    utils::{get_all_branch_names, get_all_worktree_names},
+    utils::{get_all_branch_names, get_all_worktree_names, get_current_branch_name},
     Context, RepoType,
 };
 
@@ -24,15 +23,9 @@ pub fn assert_worktree_does_not_exist(context: Context, worktree: String) {
 }
 
 pub fn assert_current_branch(context: &Context, branch: String) {
-    let result = Command::new("git")
-        .arg("branch")
-        .arg("--show-current")
-        .output()
-        .expect("Couldn't get the current branch");
-    assert_eq!(
-        branch,
-        String::from_utf8(result.stdout).expect("Couldn't get the stdout")
-    );
+    let current_branch = get_current_branch_name(&context.repo_path);
+
+    assert_eq!(branch, current_branch);
 }
 
 pub fn assert_worktree_exists(context: Context, worktree: String) {
@@ -41,7 +34,7 @@ pub fn assert_worktree_exists(context: Context, worktree: String) {
 
 pub fn create_context(repo_name: String, repo_type: RepoType) -> Context {
     Context {
-        main_branch_name: repo_name.to_string(),
+        main_branch_name: String::from("main"),
         repo_path: PathBuf::from(current_dir().unwrap()).join(format!("dummy_repos/{}", repo_name)),
         repo_type,
     }
