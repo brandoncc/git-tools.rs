@@ -18,16 +18,21 @@ fn clean_branch_name(branch: &String) -> String {
     branch.split_whitespace().last().unwrap().to_string()
 }
 
-fn clean_worktree_name(worktree: &String) -> String {
+fn clean_worktree_name(worktree: &String) -> Option<String> {
     let mut parts: Split<char> = worktree.as_str().split('[');
-    assert_eq!(2, parts.clone().count());
 
-    parts
+    if parts.clone().count() < 2 {
+        return None;
+    }
+
+    let name = parts
         .next_back()
         .expect("Couldn't get second item")
         .strip_suffix(']')
         .expect("Couldn't strip suffix")
-        .to_string()
+        .to_string();
+
+    Some(name)
 }
 
 pub fn get_all_branch_names(repo_path: &PathBuf) -> Vec<String> {
@@ -44,7 +49,7 @@ pub fn get_all_worktree_names(repo_path: &PathBuf) -> Vec<String> {
         .expect("Couldn't get worktree names")
         .output
         .iter()
-        .map(clean_worktree_name)
+        .filter_map(clean_worktree_name)
         .collect::<Vec<String>>()
 }
 

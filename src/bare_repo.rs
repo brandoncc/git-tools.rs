@@ -1,20 +1,36 @@
-use crate::{Context, commands::git_command, utils::merged_branches};
+use crate::{commands::git_command, utils::merged_branches, Context};
 
-pub fn clean_merged_branches(context: &Context) {
-    println!("Cleaning merged branches from bare repo");
-    let branches = merged_branches(&context.main_branch_name, &context.repo_path);
-    // get all merged branches
-    //
-    // for each branch:
-    //   if it is clean:
-    //     log that it is being deleted
+pub fn clean_merged_branches(context: &Context) -> Result<(), String> {
+    let branches = merged_branches(&context.main_branch_name, &context.repo_path)
+        .expect("Couldn't get the list of merged branches");
+
+    for branch in branches {
+        if worktree_is_clean(context, &branch) {
+            match delete_worktree(context, &branch) {
+                Ok(_) => (),
+                Err(msg) => println!("Couldn't delete worktree '{}', error: {}", branch, msg)
+            }
+        }
+    }
+
+    Ok(())
 }
 
-fn branch_is_clean(context: Context, branch: String) -> bool {
+fn delete_worktree(context: &Context, branch: &String) -> Result<(), String> {
+    match git_command(
+        vec!["worktree", "remove", branch.as_str()],
+        context.repo_path.clone(),
+    ) {
+        Ok(_) => Ok(()),
+        Err(result) => Err(format!("{}", result.output.join(","))),
+    }
+}
+
+fn worktree_is_clean(context: &Context, branch: &String) -> bool {
     let result = git_command(vec!["status", "--short"], context.repo_path.join(branch));
 
     match result {
         Ok(res) => res.output.len() == 0,
-        Err(res) => false
+        Err(_) => false,
     }
 }

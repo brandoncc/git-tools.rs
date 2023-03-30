@@ -111,13 +111,18 @@ fn get_repo_type(repo_path: &PathBuf) -> RepoType {
 
 fn main() {
     let context = Context::create();
-    println!("context: {:?}", context);
 
     match get_command() {
         AvailableCommands::CleanMergedBranches => match context.repo_type {
-            RepoType::Bare => panic!("Not implemented"),
+            RepoType::Bare => match bare_repo::clean_merged_branches(&context) {
+                Ok(_) => (),
+                Err(msg) => {
+                    println!("Error: {}", msg);
+                    exit(1);
+                }
+            },
             RepoType::Normal => match normal_repo::clean_merged_branches(&context) {
-                Ok(_) => {}
+                Ok(_) => (),
                 Err(msg) => {
                     println!("Error: {}", msg);
                     exit(1);
