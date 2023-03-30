@@ -35,6 +35,8 @@ pub fn clean_merged_branches(context: &Context) -> Result<(), String> {
         if branch == current_branch {
             deleted_current_branch = true;
         }
+
+        println!("Deleted branch: {}", branch);
     }
 
     if !deleted_current_branch {

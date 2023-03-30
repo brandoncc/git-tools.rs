@@ -7,7 +7,7 @@ pub fn clean_merged_branches(context: &Context) -> Result<(), String> {
     for branch in branches {
         if worktree_is_clean(context, &branch) {
             match delete_worktree(context, &branch) {
-                Ok(_) => (),
+                Ok(_) => println!("Deleted worktree: {}", branch),
                 Err(msg) => println!("Couldn't delete worktree '{}', error: {}", branch, msg)
             }
         }
