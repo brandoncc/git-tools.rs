@@ -19,49 +19,44 @@ fn create_bare_repo(test_name: &str) -> Result<(), Box<dyn Error>> {
 
     Command::new("mkdir")
         .arg("-p")
-        .arg(format!("dummy_repos/{}/bare_repo.tmp", test_name))
+        .arg(format!("dummy_repos/{}/bare_repo_source", test_name))
         .output()?;
 
     Command::new("git")
         .arg("init")
-        .current_dir(format!("dummy_repos/{}/bare_repo.tmp", test_name))
+        .current_dir(format!("dummy_repos/{}/bare_repo_source", test_name))
         .output()?;
 
     Command::new("touch")
         .arg("README.md")
-        .current_dir(format!("dummy_repos/{}/bare_repo.tmp", test_name))
+        .current_dir(format!("dummy_repos/{}/bare_repo_source", test_name))
         .output()?;
 
     Command::new("git")
         .arg("add")
         .arg("README.md")
-        .current_dir(format!("dummy_repos/{}/bare_repo.tmp", test_name))
+        .current_dir(format!("dummy_repos/{}/bare_repo_source", test_name))
         .output()?;
 
     Command::new("git")
         .arg("commit")
         .arg("-m")
         .arg("commit readme")
-        .current_dir(format!("dummy_repos/{}/bare_repo.tmp", test_name))
+        .current_dir(format!("dummy_repos/{}/bare_repo_source", test_name))
+        .output()?;
+
+    Command::new("git")
+        .arg("checkout")
+        .arg("-b")
+        .arg("other-branch")
+        .current_dir(format!("dummy_repos/{}/bare_repo_source", test_name))
         .output()?;
 
     Command::new("git")
         .arg("clone")
         .arg("--bare")
-        .arg(format!("dummy_repos/{}/bare_repo.tmp", test_name))
+        .arg(format!("dummy_repos/{}/bare_repo_source", test_name))
         .arg(format!("dummy_repos/{}/bare_repo", test_name))
-        .output()?;
-
-    Command::new("git")
-        .arg("remote")
-        .arg("rm")
-        .arg("origin")
-        .current_dir(format!("dummy_repos/{}/bare_repo", test_name))
-        .output()?;
-
-    Command::new("rm")
-        .arg("-rf")
-        .arg(format!("dummy_repos/{}/bare_repo.tmp", test_name))
         .output()?;
 
     Ok(())
