@@ -1,14 +1,18 @@
-use crate::{commands::git_command, utils::merged_branches, Context};
+use crate::{
+    commands::git_command,
+    utils::get_all_worktree_names,
+    Context,
+};
 
-pub fn clean_merged_branches(context: &Context) -> Result<(), String> {
-    let branches = merged_branches(&context.main_branch_name, &context.repo_path)
-        .expect("Couldn't get the list of merged branches");
+pub fn clean_merged_worktrees(context: &Context) -> Result<(), String> {
+    let worktrees = get_all_worktree_names(&context.repo_path)
+        .expect("Couldn't get the list of merged worktrees");
 
-    for branch in branches {
-        if worktree_is_clean(context, &branch) {
-            match delete_worktree(context, &branch) {
-                Ok(_) => println!("Deleted worktree: {}", branch),
-                Err(msg) => println!("Couldn't delete worktree '{}', error: {}", branch, msg)
+    for worktree in worktrees {
+        if (worktree != context.main_branch_name) && worktree_is_clean(context, &worktree) {
+            match delete_worktree(context, &worktree) {
+                Ok(_) => println!("Deleted worktree: {}", worktree),
+                Err(msg) => println!("Couldn't delete worktree '{}', error: {}", worktree, msg),
             }
         }
     }

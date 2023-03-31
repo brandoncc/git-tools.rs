@@ -92,7 +92,7 @@ fn main() {
 
     match get_command() {
         AvailableCommands::CleanMergedBranches => match context.repo_type {
-            RepoType::Bare => match bare_repo::clean_merged_branches(&context) {
+            RepoType::Bare => match bare_repo::clean_merged_worktrees(&context) {
                 Ok(_) => (),
                 Err(msg) => {
                     println!("Error: {}", msg);
