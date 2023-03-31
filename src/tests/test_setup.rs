@@ -62,31 +62,33 @@ fn create_bare_repo(test_name: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn setup_worktrees(test_name: &str) -> Result<(), Box<dyn Error>> {
-    Command::new("git")
-        .arg("worktree")
-        .arg("add")
-        .arg("main")
-        .current_dir(format!("dummy_repos/{}/bare_repo", test_name))
-        .output()?;
+fn create_worktree(
+    test_name: &str,
+    worktree_name: &str,
+    worktree_path: Option<&str>,
+) -> Result<(), Box<dyn Error>> {
+    let mut command = Command::new("git");
+    command.current_dir(format!("dummy_repos/{}/bare_repo", test_name));
+    command.arg("worktree").arg("add");
 
-    Command::new("git")
-        .arg("worktree")
-        .arg("add")
-        .arg("dirty")
-        .current_dir(format!("dummy_repos/{}/bare_repo", test_name))
-        .output()?;
+    if let Some(path) = worktree_path {
+        command.arg(path);
+    }
+
+    command.arg(worktree_name).output()?;
+
+    Ok(())
+}
+
+fn setup_worktrees(test_name: &str) -> Result<(), Box<dyn Error>> {
+    create_worktree(test_name, "main", None)?;
+    create_worktree(test_name, "dirty", None)?;
+    create_worktree(test_name, "unmerged", None)?;
+    create_worktree(test_name, "merged", None)?;
 
     Command::new("touch")
         .arg("uncommitted-file")
         .current_dir(format!("dummy_repos/{}/bare_repo/dirty", test_name))
-        .output()?;
-
-    Command::new("git")
-        .arg("worktree")
-        .arg("add")
-        .arg("unmerged")
-        .current_dir(format!("dummy_repos/{}/bare_repo", test_name))
         .output()?;
 
     Command::new("touch")
@@ -105,13 +107,6 @@ fn setup_worktrees(test_name: &str) -> Result<(), Box<dyn Error>> {
         .arg("-m")
         .arg("file that won't be merged")
         .current_dir(format!("dummy_repos/{}/bare_repo/unmerged", test_name))
-        .output()?;
-
-    Command::new("git")
-        .arg("worktree")
-        .arg("add")
-        .arg("merged")
-        .current_dir(format!("dummy_repos/{}/bare_repo", test_name))
         .output()?;
 
     Command::new("touch")
