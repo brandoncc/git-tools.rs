@@ -8,14 +8,14 @@ pub struct WorktreeListItem<'a> {
 }
 
 impl<'a> WorktreeListItem<'a> {
-    fn new(repo_path: &'a str, list_item_output: &'a str) -> Self {
+    pub fn new(repo_path: &'a str, list_item_output: &'a str) -> Self {
         Self {
             list_item_output,
             repo_path,
         }
     }
 
-    fn path(&self) -> Option<String> {
+    pub fn path(&self) -> Option<String> {
         if self.is_bare() {
             return None;
         }
@@ -46,7 +46,7 @@ impl<'a> WorktreeListItem<'a> {
         )
     }
 
-    fn name(&self) -> Option<String> {
+    pub fn name(&self) -> Option<String> {
         if self.is_bare() {
             return None;
         }
@@ -59,7 +59,7 @@ impl<'a> WorktreeListItem<'a> {
         Some(worktree_name.to_string())
     }
 
-    fn is_bare(&self) -> bool {
+    pub fn is_bare(&self) -> bool {
         self.list_item_output.ends_with("(bare)")
     }
 

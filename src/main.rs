@@ -8,6 +8,7 @@ mod bare_repo;
 mod commands;
 mod normal_repo;
 mod utils;
+mod worktree;
 mod worktree_list_item;
 
 #[cfg(test)]
