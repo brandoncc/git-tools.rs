@@ -1,6 +1,9 @@
 use std::{env, path::PathBuf};
 
-use crate::{commands::git_command, worktree::Worktree, CommandWorkingDirectory, Context, worktree_list_item::WorktreeListItem};
+use crate::{
+    commands::git_command, worktree::Worktree, worktree_list_item::WorktreeListItem,
+    CommandWorkingDirectory, Context,
+};
 
 const MAIN_BRANCH_NAMES: [&str; 2] = ["main", "master"];
 
@@ -33,13 +36,30 @@ pub fn get_all_worktrees(context: &Context) -> Result<Vec<Worktree>, String> {
         .output
         .iter()
         .map(|line| WorktreeListItem::new(&(context.repo_path), line))
-        .filter_map(|list_item| match list_item.is_bare() || list_item.is_detached() {
-            true => None,
-            false => Some(Worktree::try_from(&list_item).expect("Couldn't create Worktree from WorktreeListItem"))
-        })
+        .filter_map(
+            |list_item| match list_item.is_bare() || list_item.is_detached() {
+                true => None,
+                false => Some(
+                    Worktree::try_from(&list_item)
+                        .expect("Couldn't create Worktree from WorktreeListItem"),
+                ),
+            },
+        )
         .collect::<Vec<Worktree>>();
 
     Ok(worktrees)
+}
+
+pub fn merged_worktrees(context: &Context) -> Result<Vec<Worktree>, String> {
+    let merged = merged_branches(&context.main_branch_name, &context.repo_path)
+        .expect("Couldn't get merged branches");
+    let all = get_all_worktrees(context).expect("Couldn't get all worktrees");
+    let not_merged = all
+        .into_iter()
+        .filter(|w| merged.contains(&w.path))
+        .collect::<Vec<Worktree>>();
+
+    Ok(not_merged)
 }
 
 pub fn get_main_branch_name(repo_path: &PathBuf) -> String {

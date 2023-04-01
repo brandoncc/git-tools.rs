@@ -30,8 +30,10 @@ pub fn assert_current_branch(context: &Context, branch: String) {
     assert_eq!(branch, current_branch);
 }
 
-pub fn assert_worktree_exists(context: Context, worktree: String) {
-    assert!(get_all_branch_names(&context.repo_path).contains(&worktree));
+pub fn assert_worktree_exists(context: Context, worktree_name: String) {
+    let worktrees = get_all_worktrees(&context).expect("Couldn't get list of worktrees");
+
+    assert!(worktrees.iter().any(|w| w.name == worktree_name));
 }
 
 pub fn create_context(repo_name: String, repo_type: RepoType) -> Context {
