@@ -97,10 +97,6 @@ fn test_not_deleting_current_head_branch_leaves_repo_with_the_same_branch_checke
             test_helpers::assert_current_branch(&context, "unmerged".to_string());
         },
     );
-
-    test_helpers::run_setup(
-        "test_not_deleting_current_head_branch_leaves_repo_with_the_same_branch_checked_out",
-    );
 }
 
 #[test]
