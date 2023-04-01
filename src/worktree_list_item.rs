@@ -8,6 +8,13 @@ pub struct WorktreeListItem<'a> {
 }
 
 impl<'a> WorktreeListItem<'a> {
+    fn new(repo_path: &'a str, list_item_output: &'a str) -> Self {
+        Self {
+            list_item_output,
+            repo_path,
+        }
+    }
+
     fn path(&self) -> Option<String> {
         if self.is_bare() {
             return None;
