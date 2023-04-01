@@ -1,10 +1,10 @@
 use crate::{
     commands::git_command,
-    Context, utils::get_all_worktrees, worktree::Worktree,
+    Context, utils::merged_worktrees, worktree::Worktree,
 };
 
 pub fn clean_merged_worktrees(context: &Context) -> Result<(), String> {
-    let worktrees = get_all_worktrees(&context)
+    let worktrees = merged_worktrees(&context)
         .expect("Couldn't get the list of merged worktrees");
 
     for worktree in worktrees {

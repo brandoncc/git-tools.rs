@@ -42,6 +42,18 @@ pub fn get_all_worktrees(context: &Context) -> Result<Vec<Worktree>, String> {
     Ok(worktrees)
 }
 
+pub fn merged_worktrees(context: &Context) -> Result<Vec<Worktree>, String> {
+    let merged = merged_branches(&context.main_branch_name, &context.repo_path)
+        .expect("Couldn't get merged branches");
+    let all = get_all_worktrees(context).expect("Couldn't get all worktrees");
+    let not_merged = all
+        .into_iter()
+        .filter(|w| merged.contains(&w.path))
+        .collect::<Vec<Worktree>>();
+
+    Ok(not_merged)
+}
+
 pub fn get_main_branch_name(repo_path: &PathBuf) -> String {
     get_all_branch_names(repo_path)
         .into_iter()
