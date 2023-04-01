@@ -1,14 +1,14 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 // This is a way to store one line from `git worktree list` so that it can be easily coerced into a
 // Worktree
 pub struct WorktreeListItem<'a> {
-    repo_path: &'a str,
+    repo_path: &'a PathBuf,
     list_item_output: &'a str,
 }
 
 impl<'a> WorktreeListItem<'a> {
-    pub fn new(repo_path: &'a str, list_item_output: &'a str) -> Self {
+    pub fn new(repo_path: &'a PathBuf, list_item_output: &'a str) -> Self {
         Self {
             list_item_output,
             repo_path,
