@@ -103,7 +103,7 @@ fn test_not_deleting_current_head_branch_leaves_repo_with_the_same_branch_checke
 fn test_dirty_worktrees_are_not_removed() {
     run_test(
         "test_dirty_worktrees_are_not_removed",
-        "bare_repo",
+        test_setup::BARE_REPO_NAME,
         RepoType::Bare,
         |context| {
             bare_repo::clean_merged_worktrees(&context).expect("failed to clean merged branches");
@@ -117,7 +117,7 @@ fn test_dirty_worktrees_are_not_removed() {
 fn test_unmerged_worktrees_are_not_removed() {
     run_test(
         "test_unmerged_worktrees_are_not_removed",
-        "bare_repo",
+        test_setup::BARE_REPO_NAME,
         RepoType::Bare,
         |context| {
             bare_repo::clean_merged_worktrees(&context).expect("failed to clean merged branches");
@@ -131,7 +131,7 @@ fn test_unmerged_worktrees_are_not_removed() {
 fn test_merged_worktrees_are_removed() {
     run_test(
         "test_merged_worktrees_are_removed",
-        "bare_repo",
+        test_setup::BARE_REPO_NAME,
         RepoType::Bare,
         |context| {
             bare_repo::clean_merged_worktrees(&context).expect("failed to clean merged branches");
@@ -145,7 +145,7 @@ fn test_merged_worktrees_are_removed() {
 fn test_main_worktree_is_not_removed() {
     run_test(
         "test_main_worktree_is_not_removed",
-        "bare_repo",
+        test_setup::BARE_REPO_NAME,
         RepoType::Bare,
         |context| {
             bare_repo::clean_merged_worktrees(&context).expect("failed to clean merged branches");
