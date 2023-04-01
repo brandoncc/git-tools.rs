@@ -20,7 +20,6 @@ pub fn clean_merged_worktrees(context: &Context) -> Result<(), String> {
 }
 
 fn delete_worktree(context: &Context, worktree: &Worktree) -> Result<(), String> {
-    println!("worktree: {:?}", worktree);
     match git_command(
         vec!["worktree", "remove", &worktree.path],
         context.repo_path.clone(),

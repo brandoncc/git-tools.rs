@@ -7,7 +7,6 @@ fn test_path_output_does_not_include_repo_path() {
     let repo_path = PathBuf::from("/a/repo");
     let item = WorktreeListItem::new(&repo_path, "/a/repo/some-work f9e08b4 [some-work]");
 
-    println!("item.path(): {:?}", item.path());
     assert_eq!(Some("some-work".to_string()), item.path());
 }
 
