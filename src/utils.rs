@@ -1,6 +1,6 @@
 use std::{env, path::PathBuf};
 
-use crate::{commands::git_command, CommandWorkingDirectory};
+use crate::{commands::git_command, worktree::Worktree, CommandWorkingDirectory, Context, worktree_list_item::WorktreeListItem};
 
 const MAIN_BRANCH_NAMES: [&str; 2] = ["main", "master"];
 
@@ -25,6 +25,21 @@ pub fn get_all_branch_names(repo_path: &PathBuf) -> Vec<String> {
         .iter()
         .map(clean_branch_name)
         .collect::<Vec<String>>()
+}
+
+pub fn get_all_worktrees(context: &Context) -> Result<Vec<Worktree>, String> {
+    let worktrees = git_command(vec!["worktree", "list"], PathBuf::from(&context.repo_path))
+        .expect("Couldn't get worktree names")
+        .output
+        .iter()
+        .map(|line| WorktreeListItem::new(&(context.repo_path), line))
+        .filter_map(|list_item| match list_item.is_bare() || list_item.is_detached() {
+            true => None,
+            false => Some(Worktree::try_from(&list_item).expect("Couldn't create Worktree from WorktreeListItem"))
+        })
+        .collect::<Vec<Worktree>>();
+
+    Ok(worktrees)
 }
 
 pub fn get_main_branch_name(repo_path: &PathBuf) -> String {

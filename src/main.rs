@@ -8,6 +8,8 @@ mod bare_repo;
 mod commands;
 mod normal_repo;
 mod utils;
+mod worktree;
+mod worktree_list_item;
 
 #[cfg(test)]
 mod tests;
@@ -92,7 +94,7 @@ fn main() {
 
     match get_command() {
         AvailableCommands::CleanMergedBranches => match context.repo_type {
-            RepoType::Bare => match bare_repo::clean_merged_branches(&context) {
+            RepoType::Bare => match bare_repo::clean_merged_worktrees(&context) {
                 Ok(_) => (),
                 Err(msg) => {
                     println!("Error: {}", msg);

@@ -1,14 +1,17 @@
-use crate::{commands::git_command, utils::merged_branches, Context};
+use crate::{
+    commands::git_command,
+    Context, utils::get_all_worktrees, worktree::Worktree,
+};
 
-pub fn clean_merged_branches(context: &Context) -> Result<(), String> {
-    let branches = merged_branches(&context.main_branch_name, &context.repo_path)
-        .expect("Couldn't get the list of merged branches");
+pub fn clean_merged_worktrees(context: &Context) -> Result<(), String> {
+    let worktrees = get_all_worktrees(&context)
+        .expect("Couldn't get the list of merged worktrees");
 
-    for branch in branches {
-        if worktree_is_clean(context, &branch) {
-            match delete_worktree(context, &branch) {
-                Ok(_) => println!("Deleted worktree: {}", branch),
-                Err(msg) => println!("Couldn't delete worktree '{}', error: {}", branch, msg)
+    for worktree in worktrees {
+        if (worktree.name != context.main_branch_name) && worktree_is_clean(context, &worktree) {
+            match delete_worktree(context, &worktree) {
+                Ok(_) => println!("Deleted worktree: {}", worktree.path),
+                Err(msg) => println!("Couldn't delete worktree '{}', error: {}", worktree.path, msg),
             }
         }
     }
@@ -16,9 +19,9 @@ pub fn clean_merged_branches(context: &Context) -> Result<(), String> {
     Ok(())
 }
 
-fn delete_worktree(context: &Context, branch: &String) -> Result<(), String> {
+fn delete_worktree(context: &Context, worktree: &Worktree) -> Result<(), String> {
     match git_command(
-        vec!["worktree", "remove", branch.as_str()],
+        vec!["worktree", "remove", &worktree.path],
         context.repo_path.clone(),
     ) {
         Ok(_) => Ok(()),
@@ -26,8 +29,8 @@ fn delete_worktree(context: &Context, branch: &String) -> Result<(), String> {
     }
 }
 
-fn worktree_is_clean(context: &Context, branch: &String) -> bool {
-    let result = git_command(vec!["status", "--short"], context.repo_path.join(branch));
+fn worktree_is_clean(context: &Context, worktree: &Worktree) -> bool {
+    let result = git_command(vec!["status", "--short"], context.repo_path.join(&worktree.path));
 
     match result {
         Ok(res) => res.output.len() == 0,

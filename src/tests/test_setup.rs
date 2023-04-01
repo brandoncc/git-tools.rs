@@ -1,5 +1,7 @@
 use std::{error::Error, process::Command};
 
+pub const BARE_REPO_NAME: &str = "abc";
+
 pub fn setup(test_name: &str) -> Result<(), Box<dyn Error>> {
     // make sure we start with a clean slate even of a previous test failed
     teardown(test_name)?;
@@ -14,133 +16,124 @@ pub fn setup(test_name: &str) -> Result<(), Box<dyn Error>> {
 fn create_bare_repo(test_name: &str) -> Result<(), Box<dyn Error>> {
     Command::new("mkdir")
         .arg("-p")
-        .arg(format!("dummy_repos/{}/bare_repo", test_name))
+        .arg(format!("dummy_repos/{}/{}", test_name, BARE_REPO_NAME))
         .output()?;
 
     Command::new("mkdir")
         .arg("-p")
-        .arg(format!("dummy_repos/{}/bare_repo.tmp", test_name))
+        .arg(format!("dummy_repos/{}/bare_repo_source", test_name))
         .output()?;
 
     Command::new("git")
         .arg("init")
-        .current_dir(format!("dummy_repos/{}/bare_repo.tmp", test_name))
+        .current_dir(format!("dummy_repos/{}/bare_repo_source", test_name))
         .output()?;
 
     Command::new("touch")
         .arg("README.md")
-        .current_dir(format!("dummy_repos/{}/bare_repo.tmp", test_name))
+        .current_dir(format!("dummy_repos/{}/bare_repo_source", test_name))
         .output()?;
 
     Command::new("git")
         .arg("add")
         .arg("README.md")
-        .current_dir(format!("dummy_repos/{}/bare_repo.tmp", test_name))
+        .current_dir(format!("dummy_repos/{}/bare_repo_source", test_name))
         .output()?;
 
     Command::new("git")
         .arg("commit")
         .arg("-m")
         .arg("commit readme")
-        .current_dir(format!("dummy_repos/{}/bare_repo.tmp", test_name))
+        .current_dir(format!("dummy_repos/{}/bare_repo_source", test_name))
+        .output()?;
+
+    Command::new("git")
+        .arg("checkout")
+        .arg("-b")
+        .arg("other-branch")
+        .current_dir(format!("dummy_repos/{}/bare_repo_source", test_name))
         .output()?;
 
     Command::new("git")
         .arg("clone")
         .arg("--bare")
-        .arg(format!("dummy_repos/{}/bare_repo.tmp", test_name))
-        .arg(format!("dummy_repos/{}/bare_repo", test_name))
-        .output()?;
-
-    Command::new("git")
-        .arg("remote")
-        .arg("rm")
-        .arg("origin")
-        .current_dir(format!("dummy_repos/{}/bare_repo", test_name))
-        .output()?;
-
-    Command::new("rm")
-        .arg("-rf")
-        .arg(format!("dummy_repos/{}/bare_repo.tmp", test_name))
+        .arg(format!("dummy_repos/{}/bare_repo_source", test_name))
+        .arg(format!("dummy_repos/{}/{}", test_name, BARE_REPO_NAME))
         .output()?;
 
     Ok(())
 }
 
-fn setup_worktrees(test_name: &str) -> Result<(), Box<dyn Error>> {
-    Command::new("git")
-        .arg("worktree")
-        .arg("add")
-        .arg("main")
-        .current_dir(format!("dummy_repos/{}/bare_repo", test_name))
-        .output()?;
+fn create_worktree(
+    test_name: &str,
+    worktree_name: &str,
+    worktree_path: Option<&str>,
+) -> Result<(), Box<dyn Error>> {
+    let mut command = Command::new("git");
+    command.current_dir(format!("dummy_repos/{}/{}", test_name, BARE_REPO_NAME));
+    command.arg("worktree").arg("add");
 
-    Command::new("git")
-        .arg("worktree")
-        .arg("add")
-        .arg("dirty")
-        .current_dir(format!("dummy_repos/{}/bare_repo", test_name))
-        .output()?;
+    if let Some(path) = worktree_path {
+        command.arg(path);
+    }
+
+    command.arg(worktree_name).output()?;
+
+    Ok(())
+}
+
+fn setup_worktrees(test_name: &str) -> Result<(), Box<dyn Error>> {
+    create_worktree(test_name, "main", None)?;
+    create_worktree(test_name, "dirty", None)?;
+    create_worktree(test_name, "unmerged", None)?;
+    create_worktree(test_name, "merged", None)?;
+    create_worktree(test_name, "other-branch", Some("origin/other-branch"))?;
 
     Command::new("touch")
         .arg("uncommitted-file")
-        .current_dir(format!("dummy_repos/{}/bare_repo/dirty", test_name))
-        .output()?;
-
-    Command::new("git")
-        .arg("worktree")
-        .arg("add")
-        .arg("unmerged")
-        .current_dir(format!("dummy_repos/{}/bare_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}/dirty", test_name, BARE_REPO_NAME))
         .output()?;
 
     Command::new("touch")
         .arg("unmerged-file")
-        .current_dir(format!("dummy_repos/{}/bare_repo/unmerged", test_name))
+        .current_dir(format!("dummy_repos/{}/{}/unmerged", test_name, BARE_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("add")
         .arg("unmerged-file")
-        .current_dir(format!("dummy_repos/{}/bare_repo/unmerged", test_name))
+        .current_dir(format!("dummy_repos/{}/{}/unmerged", test_name, BARE_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("commit")
         .arg("-m")
         .arg("file that won't be merged")
-        .current_dir(format!("dummy_repos/{}/bare_repo/unmerged", test_name))
-        .output()?;
-
-    Command::new("git")
-        .arg("worktree")
-        .arg("add")
-        .arg("merged")
-        .current_dir(format!("dummy_repos/{}/bare_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}/unmerged", test_name, BARE_REPO_NAME))
         .output()?;
 
     Command::new("touch")
         .arg("merged-file")
-        .current_dir(format!("dummy_repos/{}/bare_repo/merged", test_name))
+        .current_dir(format!("dummy_repos/{}/{}/merged", test_name, BARE_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("add")
         .arg("merged-file")
-        .current_dir(format!("dummy_repos/{}/bare_repo/merged", test_name))
+        .current_dir(format!("dummy_repos/{}/{}/merged", test_name, BARE_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("commit")
         .arg("-m")
         .arg("file that will be merged")
-        .current_dir(format!("dummy_repos/{}/bare_repo/merged", test_name))
+        .current_dir(format!("dummy_repos/{}/{}/merged", test_name, BARE_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("merge")
         .arg("merged")
-        .current_dir(format!("dummy_repos/{}/bare_repo/main", test_name))
+        .current_dir(format!("dummy_repos/{}/{}/main", test_name, BARE_REPO_NAME))
         .output()?;
 
     Ok(())
