@@ -39,6 +39,16 @@ fn test_path_worktree_path_and_repo_path_can_include_symbols() {
 }
 
 #[test]
+fn test_path_can_have_a_subdirectory() {
+    let item = WorktreeListItem::new(
+        "/a/repo",
+        "/a/repo/origin/some-work     f9e08b4 [some-work]",
+    );
+
+    assert_eq!(Some("origin/some-work".to_string()), item.path());
+}
+
+#[test]
 fn test_path_is_none_for_the_root_list_item() {
     let item = WorktreeListItem::new(
         "/a/repo with-_ ^symbols",
