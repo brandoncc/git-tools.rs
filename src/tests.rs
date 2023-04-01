@@ -1,7 +1,7 @@
 mod test_helpers;
 mod test_setup;
 
-use crate::commands::git_command;
+use crate::{commands::git_command, utils::get_all_worktrees, worktree::Worktree};
 
 use self::test_helpers::run_test;
 use super::*;
@@ -151,6 +151,42 @@ fn test_main_worktree_is_not_removed() {
             bare_repo::clean_merged_worktrees(&context).expect("failed to clean merged branches");
 
             test_helpers::assert_worktree_exists(context, "main".to_string());
+        },
+    );
+}
+
+#[test]
+fn test_worktree_list_is_parsed_correctly() {
+    run_test(
+        "test_worktree_list_is_parsed_correctly",
+        test_setup::BARE_REPO_NAME,
+        RepoType::Bare,
+        |context| {
+            let worktrees = get_all_worktrees(&context).expect("Couldn't get all worktrees");
+            let expected = vec![
+                Worktree {
+                    name: "dirty".to_string(),
+                    path: "dirty".to_string(),
+                },
+                Worktree {
+                    name: "main".to_string(),
+                    path: "main".to_string(),
+                },
+                Worktree {
+                    name: "merged".to_string(),
+                    path: "merged".to_string(),
+                },
+                Worktree {
+                    name: "other-branch".to_string(),
+                    path: "origin/other-branch".to_string(),
+                },
+                Worktree {
+                    name: "unmerged".to_string(),
+                    path: "unmerged".to_string(),
+                },
+            ];
+
+            assert_eq!(expected, worktrees);
         },
     );
 }

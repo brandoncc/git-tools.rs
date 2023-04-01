@@ -2,7 +2,7 @@ use std::{env::current_dir, path::PathBuf};
 
 use crate::{
     tests::test_setup::{setup, teardown},
-    utils::{get_all_branch_names, get_current_branch_name, get_all_worktree_names},
+    utils::{get_all_branch_names, get_current_branch_name, get_all_worktrees},
     Context, RepoType
 };
 
@@ -18,10 +18,10 @@ pub fn assert_branch_does_not_exist(context: Context, branch: String) {
     assert!(!get_all_branch_names(&context.repo_path).contains(&branch));
 }
 
-pub fn assert_worktree_does_not_exist(context: Context, worktree: String) {
-    let worktrees = get_all_worktree_names(&context.repo_path).expect("Couldn't get list of worktrees");
+pub fn assert_worktree_does_not_exist(context: Context, worktree_name: String) {
+    let worktrees = get_all_worktrees(&context).expect("Couldn't get list of worktrees");
 
-    assert!(!worktrees.contains(&worktree));
+    assert!(!worktrees.iter().any(|w| w.name == worktree_name));
 }
 
 pub fn assert_current_branch(context: &Context, branch: String) {

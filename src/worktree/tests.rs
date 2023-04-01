@@ -22,3 +22,13 @@ fn test_worktree_cannot_be_created_from_a_bare_worktree_list_item() {
     );
     super::Worktree::try_from(&item).expect_err("Shouldn't have created a worktree, but did");
 }
+
+#[test]
+fn test_worktree_cannot_be_created_from_a_detached_worktree_list_item() {
+    let repo_path = PathBuf::from("/a/repo");
+    let item = super::WorktreeListItem::new(
+        &repo_path,
+        "/a/repo  (detached HEAD)",
+    );
+    super::Worktree::try_from(&item).expect_err("Shouldn't have created a worktree, but did");
+}

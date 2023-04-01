@@ -53,8 +53,9 @@ impl<'a> WorktreeListItem<'a> {
 
         let name_portion = self.output_split_on_left_square_bracket().1;
         let worktree_name = name_portion
-            .strip_suffix(']')
-            .expect("Couldn't strip suffix");
+            .rsplit_once(']')
+            .expect("Couldn't split on ']'")
+            .0;
 
         Some(worktree_name.to_string())
     }
@@ -63,10 +64,14 @@ impl<'a> WorktreeListItem<'a> {
         self.list_item_output.ends_with("(bare)")
     }
 
+    pub fn is_detached(&self) -> bool {
+        self.list_item_output.ends_with("(detached HEAD)")
+    }
+
     fn output_split_on_left_square_bracket(&self) -> (&str, &str) {
         self.list_item_output
             .split_once('[')
-            .expect("Couldn't split '{}' on '['")
+            .expect(format!("Couldn't split '{}' on '['", self.list_item_output).as_str())
     }
 }
 

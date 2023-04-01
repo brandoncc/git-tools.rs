@@ -1,6 +1,6 @@
-use std::{env, path::PathBuf, str::Split};
+use std::{env, path::PathBuf};
 
-use crate::{commands::git_command, CommandWorkingDirectory};
+use crate::{commands::git_command, worktree::Worktree, CommandWorkingDirectory, Context, worktree_list_item::WorktreeListItem};
 
 const MAIN_BRANCH_NAMES: [&str; 2] = ["main", "master"];
 
@@ -27,32 +27,19 @@ pub fn get_all_branch_names(repo_path: &PathBuf) -> Vec<String> {
         .collect::<Vec<String>>()
 }
 
-fn clean_worktree_name(worktree: &String) -> Option<String> {
-    let mut parts: Split<char> = worktree.as_str().split('[');
-
-    if parts.clone().count() < 2 {
-        return None;
-    }
-
-    let name = parts
-        .next_back()
-        .expect("Couldn't get second item")
-        .strip_suffix(']')
-        .expect("Couldn't strip suffix")
-        .to_string();
-
-    Some(name)
-}
-
-pub fn get_all_worktree_names(repo_path: &PathBuf) -> Result<Vec<String>, String> {
-    let names = git_command(vec!["worktree", "list"], PathBuf::from(repo_path))
+pub fn get_all_worktrees(context: &Context) -> Result<Vec<Worktree>, String> {
+    let worktrees = git_command(vec!["worktree", "list"], PathBuf::from(&context.repo_path))
         .expect("Couldn't get worktree names")
         .output
         .iter()
-        .filter_map(clean_worktree_name)
-        .collect::<Vec<String>>();
+        .map(|line| WorktreeListItem::new(&(context.repo_path), line))
+        .filter_map(|list_item| match list_item.is_bare() || list_item.is_detached() {
+            true => None,
+            false => Some(Worktree::try_from(&list_item).expect("Couldn't create Worktree from WorktreeListItem"))
+        })
+        .collect::<Vec<Worktree>>();
 
-    Ok(names)
+    Ok(worktrees)
 }
 
 pub fn get_main_branch_name(repo_path: &PathBuf) -> String {

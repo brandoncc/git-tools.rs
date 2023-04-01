@@ -2,8 +2,8 @@ use crate::worktree_list_item::WorktreeListItem;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Worktree {
-    path: String,
-    name: String,
+    pub path: String,
+    pub name: String,
 }
 
 impl<'a> TryFrom<&WorktreeListItem<'a>> for Worktree {
@@ -12,6 +12,10 @@ impl<'a> TryFrom<&WorktreeListItem<'a>> for Worktree {
     fn try_from(list_item: &WorktreeListItem) -> Result<Self, Self::Error> {
         if list_item.is_bare() {
             return Err("Can't create a Worktree from a bare WorktreeListItem");
+        }
+
+        if list_item.is_detached() {
+            return Err("Can't create a Worktree from a detached WorktreeListItem");
         }
 
         Ok(Self {

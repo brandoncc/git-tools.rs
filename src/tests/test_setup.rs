@@ -87,6 +87,7 @@ fn setup_worktrees(test_name: &str) -> Result<(), Box<dyn Error>> {
     create_worktree(test_name, "dirty", None)?;
     create_worktree(test_name, "unmerged", None)?;
     create_worktree(test_name, "merged", None)?;
+    create_worktree(test_name, "other-branch", Some("origin/other-branch"))?;
 
     Command::new("touch")
         .arg("uncommitted-file")

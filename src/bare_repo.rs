@@ -1,18 +1,17 @@
 use crate::{
     commands::git_command,
-    utils::get_all_worktree_names,
-    Context,
+    Context, utils::get_all_worktrees, worktree::Worktree,
 };
 
 pub fn clean_merged_worktrees(context: &Context) -> Result<(), String> {
-    let worktrees = get_all_worktree_names(&context.repo_path)
+    let worktrees = get_all_worktrees(&context)
         .expect("Couldn't get the list of merged worktrees");
 
     for worktree in worktrees {
-        if (worktree != context.main_branch_name) && worktree_is_clean(context, &worktree) {
+        if (worktree.name != context.main_branch_name) && worktree_is_clean(context, &worktree) {
             match delete_worktree(context, &worktree) {
-                Ok(_) => println!("Deleted worktree: {}", worktree),
-                Err(msg) => println!("Couldn't delete worktree '{}', error: {}", worktree, msg),
+                Ok(_) => println!("Deleted worktree: {}", worktree.path),
+                Err(msg) => println!("Couldn't delete worktree '{}', error: {}", worktree.path, msg),
             }
         }
     }
@@ -20,9 +19,10 @@ pub fn clean_merged_worktrees(context: &Context) -> Result<(), String> {
     Ok(())
 }
 
-fn delete_worktree(context: &Context, branch: &String) -> Result<(), String> {
+fn delete_worktree(context: &Context, worktree: &Worktree) -> Result<(), String> {
+    println!("worktree: {:?}", worktree);
     match git_command(
-        vec!["worktree", "remove", branch.as_str()],
+        vec!["worktree", "remove", &worktree.path],
         context.repo_path.clone(),
     ) {
         Ok(_) => Ok(()),
@@ -30,8 +30,8 @@ fn delete_worktree(context: &Context, branch: &String) -> Result<(), String> {
     }
 }
 
-fn worktree_is_clean(context: &Context, branch: &String) -> bool {
-    let result = git_command(vec!["status", "--short"], context.repo_path.join(branch));
+fn worktree_is_clean(context: &Context, worktree: &Worktree) -> bool {
+    let result = git_command(vec!["status", "--short"], context.repo_path.join(&worktree.path));
 
     match result {
         Ok(res) => res.output.len() == 0,
