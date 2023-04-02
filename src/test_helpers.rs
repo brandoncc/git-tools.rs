@@ -1,7 +1,7 @@
 use std::{env::current_dir, path::PathBuf};
 
 use crate::{
-    tests::test_setup::{setup, teardown},
+    test_setup::{setup, teardown},
     utils::{get_all_branch_names, get_current_branch_name, get_all_worktrees},
     Context, RepoType
 };
@@ -36,16 +36,16 @@ pub fn assert_worktree_exists(context: Context, worktree_name: String) {
     assert!(worktrees.iter().any(|w| w.name == worktree_name));
 }
 
-pub fn create_context(repo_name: String, repo_type: RepoType) -> Context {
+pub fn create_context(repo_name: String, repo_type: &RepoType) -> Context {
     Context {
         main_branch_name: String::from("main"),
         repo_path: PathBuf::from(current_dir().unwrap()).join(format!("dummy_repos/{}", repo_name)),
-        repo_type,
+        repo_type: repo_type.to_owned(),
     }
 }
 
-pub fn run_setup(test_name: &str) {
-    match setup(test_name) {
+pub fn run_setup(test_name: &str, repo_type: &RepoType) {
+    match setup(test_name, repo_type) {
         Ok(_) => (),
         Err(msg) => {
             assert!(false, "Test setup failed with error: {}", msg)
@@ -62,8 +62,8 @@ pub fn run_teardown(test_name: &str) {
     }
 }
 
-pub fn run_test(test_name: &str, repo_name: &str, repo_type: RepoType, test: fn(Context)) {
-    run_setup(test_name);
+pub fn run_test(test_name: &str, repo_name: &str, repo_type: &RepoType, test: fn(Context)) {
+    run_setup(test_name, repo_type);
     let context = create_context(format!("{}/{}", test_name, repo_name), repo_type);
     test(context);
     run_teardown(test_name);

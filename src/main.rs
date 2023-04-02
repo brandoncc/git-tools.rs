@@ -8,8 +8,15 @@ mod bare_repo;
 mod commands;
 mod normal_repo;
 mod utils;
+mod repository;
 mod worktree;
 mod worktree_list_item;
+
+#[cfg(test)]
+mod test_helpers;
+
+#[cfg(test)]
+mod test_setup;
 
 #[cfg(test)]
 mod tests;
@@ -22,7 +29,7 @@ enum AvailableCommands {
     Invalid,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum RepoType {
     Bare,
     Normal,

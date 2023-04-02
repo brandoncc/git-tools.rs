@@ -1,14 +1,22 @@
 use std::{error::Error, process::Command};
 
-pub const BARE_REPO_NAME: &str = "abc";
+use crate::RepoType;
 
-pub fn setup(test_name: &str) -> Result<(), Box<dyn Error>> {
+pub const BARE_REPO_NAME: &str = "bare repo  -_^^ with symbols and spaces";
+pub const CLEAN_NORMAL_REPO_NAME: &str = "clean_repo";
+pub const DIRTY_NORMAL_REPO_NAME: &str = "dirty_repo";
+
+pub fn setup(test_name: &str, repo_type: &RepoType) -> Result<(), Box<dyn Error>> {
     // make sure we start with a clean slate even of a previous test failed
     teardown(test_name)?;
 
-    create_bare_repo(test_name)?;
-    setup_worktrees(test_name)?;
-    create_normal_repos(test_name)?;
+    match repo_type {
+        RepoType::Bare => {
+            create_bare_repo(test_name)?;
+            setup_worktrees(test_name)?;
+        }
+        RepoType::Normal => create_normal_repos(test_name)?,
+    }
 
     Ok(())
 }
@@ -91,43 +99,64 @@ fn setup_worktrees(test_name: &str) -> Result<(), Box<dyn Error>> {
 
     Command::new("touch")
         .arg("uncommitted-file")
-        .current_dir(format!("dummy_repos/{}/{}/dirty", test_name, BARE_REPO_NAME))
+        .current_dir(format!(
+            "dummy_repos/{}/{}/dirty",
+            test_name, BARE_REPO_NAME
+        ))
         .output()?;
 
     Command::new("touch")
         .arg("unmerged-file")
-        .current_dir(format!("dummy_repos/{}/{}/unmerged", test_name, BARE_REPO_NAME))
+        .current_dir(format!(
+            "dummy_repos/{}/{}/unmerged",
+            test_name, BARE_REPO_NAME
+        ))
         .output()?;
 
     Command::new("git")
         .arg("add")
         .arg("unmerged-file")
-        .current_dir(format!("dummy_repos/{}/{}/unmerged", test_name, BARE_REPO_NAME))
+        .current_dir(format!(
+            "dummy_repos/{}/{}/unmerged",
+            test_name, BARE_REPO_NAME
+        ))
         .output()?;
 
     Command::new("git")
         .arg("commit")
         .arg("-m")
         .arg("file that won't be merged")
-        .current_dir(format!("dummy_repos/{}/{}/unmerged", test_name, BARE_REPO_NAME))
+        .current_dir(format!(
+            "dummy_repos/{}/{}/unmerged",
+            test_name, BARE_REPO_NAME
+        ))
         .output()?;
 
     Command::new("touch")
         .arg("merged-file")
-        .current_dir(format!("dummy_repos/{}/{}/merged", test_name, BARE_REPO_NAME))
+        .current_dir(format!(
+            "dummy_repos/{}/{}/merged",
+            test_name, BARE_REPO_NAME
+        ))
         .output()?;
 
     Command::new("git")
         .arg("add")
         .arg("merged-file")
-        .current_dir(format!("dummy_repos/{}/{}/merged", test_name, BARE_REPO_NAME))
+        .current_dir(format!(
+            "dummy_repos/{}/{}/merged",
+            test_name, BARE_REPO_NAME
+        ))
         .output()?;
 
     Command::new("git")
         .arg("commit")
         .arg("-m")
         .arg("file that will be merged")
-        .current_dir(format!("dummy_repos/{}/{}/merged", test_name, BARE_REPO_NAME))
+        .current_dir(format!(
+            "dummy_repos/{}/{}/merged",
+            test_name, BARE_REPO_NAME
+        ))
         .output()?;
 
     Command::new("git")
@@ -149,98 +178,98 @@ fn create_normal_repos(test_name: &str) -> Result<(), Box<dyn Error>> {
 fn create_clean_repo(test_name: &str) -> Result<(), Box<dyn Error>> {
     Command::new("mkdir")
         .arg("-p")
-        .arg(format!("dummy_repos/{}/clean_repo", test_name))
+        .arg(format!("dummy_repos/{}/{}", test_name, CLEAN_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("init")
-        .current_dir(format!("dummy_repos/{}/clean_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, CLEAN_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("touch")
         .arg("README.md")
-        .current_dir(format!("dummy_repos/{}/clean_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, CLEAN_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("add")
         .arg("README.md")
-        .current_dir(format!("dummy_repos/{}/clean_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, CLEAN_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("commit")
         .arg("-m")
         .arg("commit readme")
-        .current_dir(format!("dummy_repos/{}/clean_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, CLEAN_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("checkout")
         .arg("-b")
         .arg("unmerged")
-        .current_dir(format!("dummy_repos/{}/clean_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, CLEAN_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("touch")
         .arg("unmerged-file")
-        .current_dir(format!("dummy_repos/{}/clean_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, CLEAN_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("add")
         .arg("unmerged-file")
-        .current_dir(format!("dummy_repos/{}/clean_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, CLEAN_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("commit")
         .arg("-m")
         .arg("commit unmerged-file")
-        .current_dir(format!("dummy_repos/{}/clean_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, CLEAN_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("checkout")
         .arg("main")
-        .current_dir(format!("dummy_repos/{}/clean_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, CLEAN_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("checkout")
         .arg("-b")
         .arg("merged")
-        .current_dir(format!("dummy_repos/{}/clean_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, CLEAN_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("touch")
         .arg("merged-file")
-        .current_dir(format!("dummy_repos/{}/clean_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, CLEAN_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("add")
         .arg("merged-file")
-        .current_dir(format!("dummy_repos/{}/clean_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, CLEAN_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("commit")
         .arg("-m")
         .arg("commit merged-file")
-        .current_dir(format!("dummy_repos/{}/clean_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, CLEAN_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("checkout")
         .arg("main")
-        .current_dir(format!("dummy_repos/{}/clean_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, CLEAN_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("merge")
         .arg("merged")
-        .current_dir(format!("dummy_repos/{}/clean_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, CLEAN_NORMAL_REPO_NAME))
         .output()?;
 
     Ok(())
@@ -249,103 +278,103 @@ fn create_clean_repo(test_name: &str) -> Result<(), Box<dyn Error>> {
 fn create_dirty_repo(test_name: &str) -> Result<(), Box<dyn Error>> {
     Command::new("mkdir")
         .arg("-p")
-        .arg(format!("dummy_repos/{}/dirty_repo", test_name))
+        .arg(format!("dummy_repos/{}/{}", test_name, DIRTY_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("init")
-        .current_dir(format!("dummy_repos/{}/dirty_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, DIRTY_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("touch")
         .arg("README.md")
-        .current_dir(format!("dummy_repos/{}/dirty_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, DIRTY_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("add")
         .arg("README.md")
-        .current_dir(format!("dummy_repos/{}/dirty_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, DIRTY_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("commit")
         .arg("-m")
         .arg("commit readme")
-        .current_dir(format!("dummy_repos/{}/dirty_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, DIRTY_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("checkout")
         .arg("-b")
         .arg("unmerged")
-        .current_dir(format!("dummy_repos/{}/dirty_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, DIRTY_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("touch")
         .arg("unmerged-file")
-        .current_dir(format!("dummy_repos/{}/dirty_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, DIRTY_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("add")
         .arg("unmerged-file")
-        .current_dir(format!("dummy_repos/{}/dirty_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, DIRTY_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("commit")
         .arg("-m")
         .arg("commit unmerged-file")
-        .current_dir(format!("dummy_repos/{}/dirty_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, DIRTY_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("checkout")
         .arg("main")
-        .current_dir(format!("dummy_repos/{}/dirty_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, DIRTY_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("checkout")
         .arg("-b")
         .arg("merged")
-        .current_dir(format!("dummy_repos/{}/dirty_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, DIRTY_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("touch")
         .arg("merged-file")
-        .current_dir(format!("dummy_repos/{}/dirty_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, DIRTY_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("add")
         .arg("merged-file")
-        .current_dir(format!("dummy_repos/{}/dirty_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, DIRTY_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("commit")
         .arg("-m")
         .arg("commit merged-file")
-        .current_dir(format!("dummy_repos/{}/dirty_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, DIRTY_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("checkout")
         .arg("main")
-        .current_dir(format!("dummy_repos/{}/dirty_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, DIRTY_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("git")
         .arg("merge")
         .arg("merged")
-        .current_dir(format!("dummy_repos/{}/dirty_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, DIRTY_NORMAL_REPO_NAME))
         .output()?;
 
     Command::new("touch")
         .arg("dirty-file")
-        .current_dir(format!("dummy_repos/{}/dirty_repo", test_name))
+        .current_dir(format!("dummy_repos/{}/{}", test_name, DIRTY_NORMAL_REPO_NAME))
         .output()?;
 
     Ok(())

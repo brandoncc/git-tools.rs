@@ -1,6 +1,3 @@
-mod test_helpers;
-mod test_setup;
-
 use crate::{commands::git_command, utils::get_all_worktrees, worktree::Worktree};
 
 use self::test_helpers::run_test;
@@ -11,7 +8,7 @@ fn test_merged_branches_are_not_deleted_if_working_tree_is_not_clean() {
     run_test(
         "test_merged_branches_are_not_deleted_if_working_tree_is_not_clean",
         "dirty_repo",
-        RepoType::Normal,
+        &RepoType::Normal,
         |context| {
             let result = normal_repo::clean_merged_branches(&context);
 
@@ -34,7 +31,7 @@ fn test_merged_branches_are_deleted_if_working_tree_is_clean() {
     run_test(
         "test_merged_branches_are_deleted_if_working_tree_is_clean",
         "clean_repo",
-        RepoType::Normal,
+        &RepoType::Normal,
         |context| {
             let result = normal_repo::clean_merged_branches(&context);
 
@@ -50,7 +47,7 @@ fn test_unmerged_branches_are_not_deleted() {
     run_test(
         "test_unmerged_branches_are_not_deleted",
         "clean_repo",
-        RepoType::Normal,
+        &RepoType::Normal,
         |context| {
             let result = normal_repo::clean_merged_branches(&context);
 
@@ -66,7 +63,7 @@ fn test_deleting_current_head_branch_leaves_repo_with_main_branch_checked_out() 
     run_test(
         "test_deleting_current_head_branch_leaves_repo_with_main_branch_checked_out",
         "clean_repo",
-        RepoType::Normal,
+        &RepoType::Normal,
         |context| {
             git_command(vec!["checkout", "merged"], context.repo_path.clone())
                 .expect("Failed to checkout merged branch");
@@ -85,7 +82,7 @@ fn test_not_deleting_current_head_branch_leaves_repo_with_the_same_branch_checke
     run_test(
         "test_not_deleting_current_head_branch_leaves_repo_with_the_same_branch_checked_out",
         "clean_repo",
-        RepoType::Normal,
+        &RepoType::Normal,
         |context| {
             git_command(vec!["checkout", "unmerged"], context.repo_path.clone())
                 .expect("Failed to checkout unmerged branch");
@@ -104,7 +101,7 @@ fn test_dirty_worktrees_are_not_removed() {
     run_test(
         "test_dirty_worktrees_are_not_removed",
         test_setup::BARE_REPO_NAME,
-        RepoType::Bare,
+        &RepoType::Bare,
         |context| {
             bare_repo::clean_merged_worktrees(&context).expect("failed to clean merged branches");
 
@@ -118,7 +115,7 @@ fn test_unmerged_worktrees_are_not_removed() {
     run_test(
         "test_unmerged_worktrees_are_not_removed",
         test_setup::BARE_REPO_NAME,
-        RepoType::Bare,
+        &RepoType::Bare,
         |context| {
             bare_repo::clean_merged_worktrees(&context).expect("failed to clean merged branches");
 
@@ -132,7 +129,7 @@ fn test_merged_worktrees_are_removed() {
     run_test(
         "test_merged_worktrees_are_removed",
         test_setup::BARE_REPO_NAME,
-        RepoType::Bare,
+        &RepoType::Bare,
         |context| {
             bare_repo::clean_merged_worktrees(&context).expect("failed to clean merged branches");
 
@@ -146,7 +143,7 @@ fn test_main_worktree_is_not_removed() {
     run_test(
         "test_main_worktree_is_not_removed",
         test_setup::BARE_REPO_NAME,
-        RepoType::Bare,
+        &RepoType::Bare,
         |context| {
             bare_repo::clean_merged_worktrees(&context).expect("failed to clean merged branches");
 
@@ -160,7 +157,7 @@ fn test_worktree_list_is_parsed_correctly() {
     run_test(
         "test_worktree_list_is_parsed_correctly",
         test_setup::BARE_REPO_NAME,
-        RepoType::Bare,
+        &RepoType::Bare,
         |context| {
             let worktrees = get_all_worktrees(&context).expect("Couldn't get all worktrees");
             let expected = vec![
