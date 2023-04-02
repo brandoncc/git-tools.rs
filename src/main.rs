@@ -12,6 +12,12 @@ mod worktree;
 mod worktree_list_item;
 
 #[cfg(test)]
+mod test_helpers;
+
+#[cfg(test)]
+mod test_setup;
+
+#[cfg(test)]
 mod tests;
 
 pub type CommandWorkingDirectory = PathBuf;

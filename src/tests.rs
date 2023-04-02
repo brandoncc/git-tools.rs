@@ -1,6 +1,3 @@
-mod test_helpers;
-mod test_setup;
-
 use crate::{commands::git_command, utils::get_all_worktrees, worktree::Worktree};
 
 use self::test_helpers::run_test;

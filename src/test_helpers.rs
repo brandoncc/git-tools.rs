@@ -1,7 +1,7 @@
 use std::{env::current_dir, path::PathBuf};
 
 use crate::{
-    tests::test_setup::{setup, teardown},
+    test_setup::{setup, teardown},
     utils::{get_all_branch_names, get_current_branch_name, get_all_worktrees},
     Context, RepoType
 };
