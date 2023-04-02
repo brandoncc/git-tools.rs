@@ -22,7 +22,7 @@ enum AvailableCommands {
     Invalid,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum RepoType {
     Bare,
     Normal,

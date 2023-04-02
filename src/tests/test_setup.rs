@@ -1,14 +1,20 @@
 use std::{error::Error, process::Command};
 
+use crate::RepoType;
+
 pub const BARE_REPO_NAME: &str = "abc";
 
-pub fn setup(test_name: &str) -> Result<(), Box<dyn Error>> {
+pub fn setup(test_name: &str, repo_type: &RepoType) -> Result<(), Box<dyn Error>> {
     // make sure we start with a clean slate even of a previous test failed
     teardown(test_name)?;
 
-    create_bare_repo(test_name)?;
-    setup_worktrees(test_name)?;
-    create_normal_repos(test_name)?;
+    match repo_type {
+        RepoType::Bare => {
+            create_bare_repo(test_name)?;
+            setup_worktrees(test_name)?;
+        }
+        RepoType::Normal => create_normal_repos(test_name)?,
+    }
 
     Ok(())
 }
