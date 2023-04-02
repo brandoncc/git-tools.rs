@@ -1,17 +1,20 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
+
+use crate::repository::{BareRepository, RepositoryInterface};
 
 // This is a way to store one line from `git worktree list` so that it can be easily coerced into a
 // Worktree
+#[derive(Clone)]
 pub struct WorktreeListItem<'a> {
-    repo_path: &'a PathBuf,
-    list_item_output: &'a str,
+    list_item_output: String,
+    pub repository: &'a BareRepository,
 }
 
 impl<'a> WorktreeListItem<'a> {
-    pub fn new(repo_path: &'a PathBuf, list_item_output: &'a str) -> Self {
+    pub fn new(repository: &'a BareRepository, list_item_output: String) -> Self {
         Self {
+            repository,
             list_item_output,
-            repo_path,
         }
     }
 
@@ -35,7 +38,7 @@ impl<'a> WorktreeListItem<'a> {
             .trim();
 
         let relative_path = Path::new(absolute_path)
-            .strip_prefix(self.repo_path)
+            .strip_prefix(RepositoryInterface::root(self.repository))
             .expect("Couldn't strip repo path from full path");
 
         Some(

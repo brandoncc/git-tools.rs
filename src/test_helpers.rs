@@ -1,51 +1,48 @@
-use std::{env::current_dir, path::PathBuf};
+use std::path::PathBuf;
 
 use crate::{
-    test_setup::{setup, teardown},
-    utils::{get_all_branch_names, get_current_branch_name, get_all_worktrees},
-    Context, RepoType
+    get_cwd,
+    repository::{all_branch_names, BareRepository, Repository, RepositoryInterface},
+    test_setup::{setup, teardown, BARE_REPO_NAME, DUMMY_REPOS_DIRECTORY},
+    utils::get_current_branch_name,
 };
 
-pub fn assert_branches(context: Context, branches: Vec<String>) {
-    assert_eq!(get_all_branch_names(&context.repo_path), branches);
+pub fn assert_branches(repo: &Box<dyn RepositoryInterface>, branches: Vec<String>) {
+    assert_eq!(all_branch_names(repo.root()), branches);
 }
 
-pub fn assert_branch_exists(context: Context, branch: String) {
-    assert!(get_all_branch_names(&context.repo_path).contains(&branch));
+pub fn assert_branch_exists(repo: &Box<dyn RepositoryInterface>, branch: String) {
+    assert!(all_branch_names(repo.root()).contains(&branch));
 }
 
-pub fn assert_branch_does_not_exist(context: Context, branch: String) {
-    assert!(!get_all_branch_names(&context.repo_path).contains(&branch));
+pub fn assert_branch_does_not_exist(repo: &Box<dyn RepositoryInterface>, branch: String) {
+    assert!(!all_branch_names(repo.root()).contains(&branch));
 }
 
-pub fn assert_worktree_does_not_exist(context: Context, worktree_name: String) {
-    let worktrees = get_all_worktrees(&context).expect("Couldn't get list of worktrees");
+pub fn assert_worktree_does_not_exist(repo: &BareRepository, worktree_name: String) {
+    let worktrees = repo
+        .all_worktrees()
+        .expect("Couldn't get list of worktrees");
 
     assert!(!worktrees.iter().any(|w| w.name == worktree_name));
 }
 
-pub fn assert_current_branch(context: &Context, branch: String) {
-    let current_branch = get_current_branch_name(&context.repo_path);
+pub fn assert_current_branch(repo: &Box<dyn RepositoryInterface>, branch: String) {
+    let current_branch = get_current_branch_name(repo.root());
 
     assert_eq!(branch, current_branch);
 }
 
-pub fn assert_worktree_exists(context: Context, worktree_name: String) {
-    let worktrees = get_all_worktrees(&context).expect("Couldn't get list of worktrees");
+pub fn assert_worktree_exists(repo: &BareRepository, worktree_name: String) {
+    let worktrees = repo
+        .all_worktrees()
+        .expect("Couldn't get list of worktrees");
 
     assert!(worktrees.iter().any(|w| w.name == worktree_name));
 }
 
-pub fn create_context(repo_name: String, repo_type: &RepoType) -> Context {
-    Context {
-        main_branch_name: String::from("main"),
-        repo_path: PathBuf::from(current_dir().unwrap()).join(format!("dummy_repos/{}", repo_name)),
-        repo_type: repo_type.to_owned(),
-    }
-}
-
-pub fn run_setup(test_name: &str, repo_type: &RepoType) {
-    match setup(test_name, repo_type) {
+pub fn run_setup(test_name: &str, bare_repo: bool) {
+    match setup(test_name, bare_repo) {
         Ok(_) => (),
         Err(msg) => {
             assert!(false, "Test setup failed with error: {}", msg)
@@ -62,9 +59,15 @@ pub fn run_teardown(test_name: &str) {
     }
 }
 
-pub fn run_test(test_name: &str, repo_name: &str, repo_type: &RepoType, test: fn(Context)) {
-    run_setup(test_name, repo_type);
-    let context = create_context(format!("{}/{}", test_name, repo_name), repo_type);
-    test(context);
+pub fn run_test(test_name: &str, repo_directory: &str, test: fn(Box<dyn RepositoryInterface>)) {
+    // setup must be run before we create the Repository struct or else the repo doesn't exist
+    run_setup(test_name, repo_directory == BARE_REPO_NAME);
+
+    let cwd = get_cwd();
+    let cwd_str = cwd.to_str().expect("Couldn't convert cwd to str");
+    let repo_path = PathBuf::from(format!("{}/{}/{}/{}", cwd_str, DUMMY_REPOS_DIRECTORY, test_name, repo_directory));
+    let repository = Repository::at(&repo_path).expect(format!("{:#?} is not a valid git repository", repo_path).as_str());
+
+    test(repository);
     run_teardown(test_name);
 }

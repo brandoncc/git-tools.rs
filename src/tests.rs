@@ -1,4 +1,4 @@
-use crate::{commands::git_command, utils::get_all_worktrees, worktree::Worktree};
+use crate::{commands::git_command, repository::{BareRepository, RepositoryInterface}, worktree::Worktree};
 
 use self::test_helpers::run_test;
 use super::*;
@@ -8,14 +8,13 @@ fn test_merged_branches_are_not_deleted_if_working_tree_is_not_clean() {
     run_test(
         "test_merged_branches_are_not_deleted_if_working_tree_is_not_clean",
         "dirty_repo",
-        &RepoType::Normal,
-        |context| {
-            let result = normal_repo::clean_merged_branches(&context);
+        |repo| {
+            let result = repo.clean_merged();
 
             assert!(result.is_err());
 
             test_helpers::assert_branches(
-                context,
+                &repo,
                 vec![
                     "main".to_string(),
                     "merged".to_string(),
@@ -31,13 +30,12 @@ fn test_merged_branches_are_deleted_if_working_tree_is_clean() {
     run_test(
         "test_merged_branches_are_deleted_if_working_tree_is_clean",
         "clean_repo",
-        &RepoType::Normal,
-        |context| {
-            let result = normal_repo::clean_merged_branches(&context);
+        |repo| {
+            let result = repo.clean_merged();
 
             assert!(result.is_ok());
 
-            test_helpers::assert_branch_does_not_exist(context, "merged".to_string());
+            test_helpers::assert_branch_does_not_exist(&repo, "merged".to_string());
         },
     );
 }
@@ -47,13 +45,12 @@ fn test_unmerged_branches_are_not_deleted() {
     run_test(
         "test_unmerged_branches_are_not_deleted",
         "clean_repo",
-        &RepoType::Normal,
-        |context| {
-            let result = normal_repo::clean_merged_branches(&context);
+        |repo| {
+            let result = repo.clean_merged();
 
             assert!(result.is_ok());
 
-            test_helpers::assert_branch_exists(context, "unmerged".to_string());
+            test_helpers::assert_branch_exists(&repo, "unmerged".to_string());
         },
     );
 }
@@ -63,16 +60,16 @@ fn test_deleting_current_head_branch_leaves_repo_with_main_branch_checked_out() 
     run_test(
         "test_deleting_current_head_branch_leaves_repo_with_main_branch_checked_out",
         "clean_repo",
-        &RepoType::Normal,
-        |context| {
-            git_command(vec!["checkout", "merged"], context.repo_path.clone())
+        |repo| {
+            git_command(vec!["checkout", "merged"], repo.root())
                 .expect("Failed to checkout merged branch");
 
-            test_helpers::assert_current_branch(&context, "merged".to_string());
+            test_helpers::assert_current_branch(&repo, "merged".to_string());
 
-            normal_repo::clean_merged_branches(&context).expect("failed to clean merged branches");
+            repo.clean_merged()
+                .expect("failed to clean merged branches");
 
-            test_helpers::assert_current_branch(&context, "main".to_string());
+            test_helpers::assert_current_branch(&repo, "main".to_string());
         },
     );
 }
@@ -82,16 +79,16 @@ fn test_not_deleting_current_head_branch_leaves_repo_with_the_same_branch_checke
     run_test(
         "test_not_deleting_current_head_branch_leaves_repo_with_the_same_branch_checked_out",
         "clean_repo",
-        &RepoType::Normal,
-        |context| {
-            git_command(vec!["checkout", "unmerged"], context.repo_path.clone())
+        |repo| {
+            git_command(vec!["checkout", "unmerged"], repo.root())
                 .expect("Failed to checkout unmerged branch");
 
-            test_helpers::assert_current_branch(&context, "unmerged".to_string());
+            test_helpers::assert_current_branch(&repo, "unmerged".to_string());
 
-            normal_repo::clean_merged_branches(&context).expect("failed to clean merged branches");
+            repo.clean_merged()
+                .expect("failed to clean merged branches");
 
-            test_helpers::assert_current_branch(&context, "unmerged".to_string());
+            test_helpers::assert_current_branch(&repo, "unmerged".to_string());
         },
     );
 }
@@ -101,11 +98,14 @@ fn test_dirty_worktrees_are_not_removed() {
     run_test(
         "test_dirty_worktrees_are_not_removed",
         test_setup::BARE_REPO_NAME,
-        &RepoType::Bare,
-        |context| {
-            bare_repo::clean_merged_worktrees(&context).expect("failed to clean merged branches");
+        |repo| {
+            let bare_repo = repo
+                .as_any()
+                .downcast_ref::<BareRepository>()
+                .expect("Should have been a BareRepository, but wasn't");
+            RepositoryInterface::clean_merged(bare_repo).expect("failed to clean merged worktrees");
 
-            test_helpers::assert_worktree_exists(context, "dirty".to_string());
+            test_helpers::assert_worktree_exists(bare_repo, "dirty".to_string());
         },
     );
 }
@@ -115,11 +115,15 @@ fn test_unmerged_worktrees_are_not_removed() {
     run_test(
         "test_unmerged_worktrees_are_not_removed",
         test_setup::BARE_REPO_NAME,
-        &RepoType::Bare,
-        |context| {
-            bare_repo::clean_merged_worktrees(&context).expect("failed to clean merged branches");
+        |repo| {
+            let bare_repo = repo
+                .as_any()
+                .downcast_ref::<BareRepository>()
+                .expect("Should have been a BareRepository, but wasn't");
+            RepositoryInterface::clean_merged(bare_repo)
+                .expect("failed to clean merged worktrees");
 
-            test_helpers::assert_worktree_exists(context, "unmerged".to_string());
+            test_helpers::assert_worktree_exists(bare_repo, "unmerged".to_string());
         },
     );
 }
@@ -129,11 +133,15 @@ fn test_merged_worktrees_are_removed() {
     run_test(
         "test_merged_worktrees_are_removed",
         test_setup::BARE_REPO_NAME,
-        &RepoType::Bare,
-        |context| {
-            bare_repo::clean_merged_worktrees(&context).expect("failed to clean merged branches");
+        |repo| {
+            let bare_repo = repo
+                .as_any()
+                .downcast_ref::<BareRepository>()
+                .expect("Should have been a BareRepository, but wasn't");
+            RepositoryInterface::clean_merged(bare_repo)
+                .expect("failed to clean merged worktrees");
 
-            test_helpers::assert_worktree_does_not_exist(context, "merged".to_string());
+            test_helpers::assert_worktree_does_not_exist(bare_repo, "merged".to_string());
         },
     );
 }
@@ -143,11 +151,15 @@ fn test_main_worktree_is_not_removed() {
     run_test(
         "test_main_worktree_is_not_removed",
         test_setup::BARE_REPO_NAME,
-        &RepoType::Bare,
-        |context| {
-            bare_repo::clean_merged_worktrees(&context).expect("failed to clean merged branches");
+        |repo| {
+            let bare_repo = repo
+                .as_any()
+                .downcast_ref::<BareRepository>()
+                .expect("Should have been a BareRepository, but wasn't");
+            RepositoryInterface::clean_merged(bare_repo)
+                .expect("failed to clean merged worktrees");
 
-            test_helpers::assert_worktree_exists(context, "main".to_string());
+            test_helpers::assert_worktree_exists(bare_repo, "main".to_string());
         },
     );
 }
@@ -157,31 +169,43 @@ fn test_worktree_list_is_parsed_correctly() {
     run_test(
         "test_worktree_list_is_parsed_correctly",
         test_setup::BARE_REPO_NAME,
-        &RepoType::Bare,
-        |context| {
-            let worktrees = get_all_worktrees(&context).expect("Couldn't get all worktrees");
+        |repo| {
+            let bare_repo = repo
+                .as_any()
+                .downcast_ref::<BareRepository>()
+                .expect("repo isn't a BareRepository, but it should be");
+            let worktrees = bare_repo
+                .all_worktrees()
+                .expect("Couldn't get all worktrees");
             let expected = vec![
                 Worktree {
                     name: "dirty".to_string(),
                     path: "dirty".to_string(),
+                    repository: bare_repo,
                 },
                 Worktree {
                     name: "main".to_string(),
                     path: "main".to_string(),
+                    repository: bare_repo,
                 },
                 Worktree {
                     name: "merged".to_string(),
                     path: "merged".to_string(),
+                    repository: bare_repo,
                 },
                 Worktree {
                     name: "other-branch".to_string(),
                     path: "origin/other-branch".to_string(),
+                    repository: bare_repo,
                 },
                 Worktree {
                     name: "unmerged".to_string(),
                     path: "unmerged".to_string(),
+                    repository: bare_repo,
                 },
             ];
+
+            println!("worktrees: {:?}", worktrees);
 
             assert_eq!(expected, worktrees);
         },
