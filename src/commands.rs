@@ -1,11 +1,9 @@
-use std::process::Command;
-
-use crate::CommandWorkingDirectory;
+use std::{process::Command, path::PathBuf};
 
 pub struct CommandConfiguration<'a> {
     cmd: &'a str,
     args: Option<Vec<&'a str>>,
-    cwd: CommandWorkingDirectory,
+    cwd: &'a PathBuf,
 }
 
 #[derive(Debug)]
@@ -76,7 +74,7 @@ pub fn run_command(config: CommandConfiguration) -> CommandExecutionResult {
     }
 }
 
-pub fn git_command(args: Vec<&str>, cwd: CommandWorkingDirectory) -> CommandExecutionResult {
+pub fn git_command(args: Vec<&str>, cwd: &PathBuf) -> CommandExecutionResult {
     let mut all_args: Vec<&str> = vec!["--no-pager"];
     all_args.extend(args);
 
