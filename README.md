@@ -13,3 +13,8 @@ merged into the main or master branch.
 
 If you are going to use this tool, please make sure you understand how it works. I do not assume any resposibility if an
 unexpected branch or worktree are deleted.
+
+## TODO
+
+- [ ] Add a "dry run" mode so that you can see what will be deleted
+- [ ] Remove as many object duplications (`clone()`/`to_owned()`) as possible
