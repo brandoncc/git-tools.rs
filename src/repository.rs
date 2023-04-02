@@ -4,7 +4,7 @@ use crate::{
     bare_repo,
     commands::git_command,
     normal_repo,
-    utils::{get_bare_root, get_main_branch_name, is_bare_repo},
+    utils::{get_bare_root, get_main_branch_name, is_bare_repo, get_normal_root},
     Context,
 };
 
@@ -18,7 +18,10 @@ struct BareRepository {
     root: PathBuf,
 }
 
-struct NormalRepository {}
+struct NormalRepository {
+    main_branch_name: String,
+    root: PathBuf,
+}
 
 pub trait RepositoryInterface {
     fn clean_merged(self: &Self, context: &Context) -> Result<(), String>;
@@ -62,6 +65,23 @@ impl BareRepository {
     }
 }
 
+impl NormalRepository {
+    pub fn at(path: &PathBuf) -> Option<Self> {
+        if !path.exists() {
+            return None;
+        }
+
+        if !is_repo(path) {
+            return None;
+        }
+
+        Some(Self {
+            main_branch_name: get_main_branch_name(path),
+            root: get_normal_root(path).expect("Expected to find a repo root, but didn't"),
+        })
+    }
+}
+
 impl Repository {
     pub fn at(path: &PathBuf) -> Option<Box<dyn RepositoryInterface>> {
         if !path.exists() {
@@ -76,7 +96,9 @@ impl Repository {
             true => Some(Box::new(BareRepository::at(path).expect(
                 format!("{:#?} is not a valid git repository", path).as_str(),
             ))),
-            false => Some(Box::new(NormalRepository {})),
+            false => Some(Box::new(NormalRepository::at(path).expect(
+                format!("{:#?} is not a valid git repository", path).as_str(),
+            ))),
         }
     }
 }
