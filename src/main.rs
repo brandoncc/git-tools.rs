@@ -7,8 +7,8 @@ use crate::utils::expand_path;
 mod bare_repo;
 mod commands;
 mod normal_repo;
-mod utils;
 mod repository;
+mod utils;
 mod worktree;
 mod worktree_list_item;
 
@@ -98,23 +98,16 @@ fn get_repo_type(repo_path: &PathBuf) -> RepoType {
 
 fn main() {
     let context = Context::create();
+    let repo = repository::Repository::at(&context.repo_path)
+        .expect(format!("{:#?} is not a valid git repository", context.repo_path).as_str());
 
     match get_command() {
-        AvailableCommands::CleanMergedBranches => match context.repo_type {
-            RepoType::Bare => match bare_repo::clean_merged_worktrees(&context) {
-                Ok(_) => (),
-                Err(msg) => {
-                    println!("Error: {}", msg);
-                    exit(1);
-                }
-            },
-            RepoType::Normal => match normal_repo::clean_merged_branches(&context) {
-                Ok(_) => (),
-                Err(msg) => {
-                    println!("Error: {}", msg);
-                    exit(1);
-                }
-            },
+        AvailableCommands::CleanMergedBranches => match repo.clean_merged(&context) {
+            Ok(_) => (),
+            Err(msg) => {
+                println!("Error: {}", msg);
+                exit(1);
+            }
         },
         _ => {
             println!("Available commands: clean-merged-branches");

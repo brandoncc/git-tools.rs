@@ -25,7 +25,7 @@ fn test_at_returns_a_bare_repository_for_the_bare_root_path() {
         "test_at_returns_a_bare_repository_for_the_bare_root_path",
         BARE_REPO_NAME,
         &RepoType::Bare,
-        |context: Context| match Repository::at(context.repo_path) {
+        |context: Context| match Repository::at(&context.repo_path) {
             Some(repo) => assert!(repo.is_bare()),
             _ => panic!("Should have returned a BareRepository, but didn't"),
         },
@@ -38,7 +38,7 @@ fn test_at_returns_a_bare_repository_for_a_valid_repo_subdirectory_path() {
         "test_at_returns_a_bare_repository_for_a_valid_repo_subdirectory_path",
         BARE_REPO_NAME,
         &RepoType::Bare,
-        |context: Context| match Repository::at(context.repo_path.join("merged")) {
+        |context: Context| match Repository::at(&context.repo_path.join("merged")) {
             Some(repo) => assert!(repo.is_bare()),
             _ => panic!("Should have returned a BareRepository, but didn't"),
         },
@@ -51,7 +51,7 @@ fn test_at_returns_a_normal_repository() {
         "test_at_returns_a_normal_repository",
         CLEAN_NORMAL_REPO_NAME,
         &RepoType::Normal,
-        |context: Context| match Repository::at(context.repo_path) {
+        |context: Context| match Repository::at(&context.repo_path) {
             Some(repo) => assert!(!repo.is_bare()),
             _ => panic!("Should have returned a BareRepository, but didn't"),
         },
@@ -61,7 +61,7 @@ fn test_at_returns_a_normal_repository() {
 #[test]
 fn test_at_returns_none_for_an_invalid_path() {
     let path = PathBuf::from("/tmp/invalid-repo-path");
-    let repo = Repository::at(path);
+    let repo = Repository::at(&path);
 
     assert!(repo.is_none());
 }
@@ -70,7 +70,7 @@ fn test_at_returns_none_for_an_invalid_path() {
 fn test_at_returns_none_for_a_non_repo_path() {
     // use /tmp or equivalent because it is guaranteed to exist and also will not be a repo path
     let path = PathBuf::from(temp_dir());
-    let repo = Repository::at(path);
+    let repo = Repository::at(&path);
 
     assert!(repo.is_none());
 }
