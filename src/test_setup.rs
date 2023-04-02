@@ -97,43 +97,64 @@ fn setup_worktrees(test_name: &str) -> Result<(), Box<dyn Error>> {
 
     Command::new("touch")
         .arg("uncommitted-file")
-        .current_dir(format!("dummy_repos/{}/{}/dirty", test_name, BARE_REPO_NAME))
+        .current_dir(format!(
+            "dummy_repos/{}/{}/dirty",
+            test_name, BARE_REPO_NAME
+        ))
         .output()?;
 
     Command::new("touch")
         .arg("unmerged-file")
-        .current_dir(format!("dummy_repos/{}/{}/unmerged", test_name, BARE_REPO_NAME))
+        .current_dir(format!(
+            "dummy_repos/{}/{}/unmerged",
+            test_name, BARE_REPO_NAME
+        ))
         .output()?;
 
     Command::new("git")
         .arg("add")
         .arg("unmerged-file")
-        .current_dir(format!("dummy_repos/{}/{}/unmerged", test_name, BARE_REPO_NAME))
+        .current_dir(format!(
+            "dummy_repos/{}/{}/unmerged",
+            test_name, BARE_REPO_NAME
+        ))
         .output()?;
 
     Command::new("git")
         .arg("commit")
         .arg("-m")
         .arg("file that won't be merged")
-        .current_dir(format!("dummy_repos/{}/{}/unmerged", test_name, BARE_REPO_NAME))
+        .current_dir(format!(
+            "dummy_repos/{}/{}/unmerged",
+            test_name, BARE_REPO_NAME
+        ))
         .output()?;
 
     Command::new("touch")
         .arg("merged-file")
-        .current_dir(format!("dummy_repos/{}/{}/merged", test_name, BARE_REPO_NAME))
+        .current_dir(format!(
+            "dummy_repos/{}/{}/merged",
+            test_name, BARE_REPO_NAME
+        ))
         .output()?;
 
     Command::new("git")
         .arg("add")
         .arg("merged-file")
-        .current_dir(format!("dummy_repos/{}/{}/merged", test_name, BARE_REPO_NAME))
+        .current_dir(format!(
+            "dummy_repos/{}/{}/merged",
+            test_name, BARE_REPO_NAME
+        ))
         .output()?;
 
     Command::new("git")
         .arg("commit")
         .arg("-m")
         .arg("file that will be merged")
-        .current_dir(format!("dummy_repos/{}/{}/merged", test_name, BARE_REPO_NAME))
+        .current_dir(format!(
+            "dummy_repos/{}/{}/merged",
+            test_name, BARE_REPO_NAME
+        ))
         .output()?;
 
     Command::new("git")
