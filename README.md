@@ -22,3 +22,5 @@ unexpected branch or worktree are deleted.
   case.
 - [ ] Add a "dry run" mode so that you can see what will be deleted
 - [ ] Remove as many object duplications (`clone()`/`to_owned()`) as possible
+- [ ] Fix CI -- `git checkout`/`git commit` don't seem to work correctly, so the dummy repos don't get setup correctly
+- [ ] Allow the tools to run on Windows. Right now, the `/` character is hard-coded as the directory separator.
