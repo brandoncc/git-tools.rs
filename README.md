@@ -18,10 +18,7 @@ unexpected branch or worktree are deleted.
 
 - [X] Removing a worktree should also delete the related branch. This should work for worktrees that have paths which
   don't match their branch name as well.
-- [ ] When parsing `git worktree --list`, use the whole path instead of just the relative path. This will remove logic
-  that splits out the relative path, and should also support unconventional repository structures. The current
-  implementation assumes that worktrees are stored as subdirectories of the repo root, but that doesn't have to be the
-  case.
+- [X] When parsing `git worktree --list`, use the whole path instead of just the relative path.
 - [ ] Add a "dry run" mode so that you can see what will be deleted
 - [ ] Remove as many object duplications (`clone()`/`to_owned()`) as possible
 - [ ] Fix CI -- `git checkout`/`git commit` don't seem to work correctly, so the dummy repos don't get setup correctly

@@ -16,7 +16,7 @@ fn test_worktree_can_be_created_from_a_worktree_list_item() {
     let item = WorktreeListItem::new(&repo, "/a/repo/origin/some-work     f9e08b4 [some-work]".to_string());
     let worktree = super::Worktree::try_from(item).expect("Couldn't create a worktree");
 
-    assert_eq!("origin/some-work", worktree.path);
+    assert_eq!("/a/repo/origin/some-work", worktree.path);
     assert_eq!("some-work", worktree.name);
 }
 
