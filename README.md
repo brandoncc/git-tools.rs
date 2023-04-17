@@ -16,6 +16,8 @@ unexpected branch or worktree are deleted.
 
 ## TODO
 
+- [ ] Removing a worktree should also delete the related branch. This should work for worktrees that have paths which
+  don't match their branch name as well.
 - [ ] When parsing `git worktree --list`, use the whole path instead of just the relative path. This will remove logic
   that splits out the relative path, and should also support unconventional repository structures. The current
   implementation assumes that worktrees are stored as subdirectories of the repo root, but that doesn't have to be the
