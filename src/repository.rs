@@ -1,4 +1,4 @@
-use std::{any::Any, path::PathBuf};
+use std::{any::Any, path::{PathBuf, Path}};
 
 use crate::{
     commands::git_command,
@@ -120,7 +120,7 @@ impl RepositoryInterface for NormalRepository {
 }
 
 impl BareRepository {
-    pub fn at(path: &PathBuf) -> Option<Self> {
+    pub fn at(path: &Path) -> Option<Self> {
         if !path.exists() {
             return None;
         }
@@ -169,7 +169,7 @@ impl BareRepository {
 }
 
 impl NormalRepository {
-    pub fn at(path: &PathBuf) -> Option<Self> {
+    pub fn at(path: &Path) -> Option<Self> {
         if !path.exists() {
             return None;
         }
@@ -222,7 +222,7 @@ impl Repository {
     }
 }
 
-fn is_repo(path: &PathBuf) -> bool {
+fn is_repo(path: &Path) -> bool {
     git_command(vec!["branch"], path).is_ok()
 }
 
@@ -230,7 +230,7 @@ fn clean_branch_name(branch: &String) -> String {
     branch.split_whitespace().last().unwrap().to_string()
 }
 
-fn merged_branches(main_branch_name: &String, repo_path: &PathBuf) -> Result<Vec<String>, String> {
+fn merged_branches(main_branch_name: &String, repo_path: &Path) -> Result<Vec<String>, String> {
     match git_command(
         vec!["branch", "--merged", main_branch_name.as_str()],
         repo_path,
@@ -239,13 +239,7 @@ fn merged_branches(main_branch_name: &String, repo_path: &PathBuf) -> Result<Vec
             .output
             .iter()
             .map(clean_branch_name)
-            .filter_map(|branch| {
-                if branch == *main_branch_name {
-                    None
-                } else {
-                    Some(branch)
-                }
-            })
+            .filter(|branch| branch.to_string() != *main_branch_name)
             .collect::<Vec<String>>()),
         Err(res) => Err(format!(
             "An error occurred while getting merged branch list: {}",
@@ -254,23 +248,17 @@ fn merged_branches(main_branch_name: &String, repo_path: &PathBuf) -> Result<Vec
     }
 }
 
-fn find_main_branch_name(repo_path: &PathBuf) -> String {
+fn find_main_branch_name(repo_path: &Path) -> String {
     all_branch_names(repo_path)
         .into_iter()
-        .filter_map(|branch| {
-            if MAIN_BRANCH_NAMES.contains(&branch.as_str()) {
-                Some(branch)
-            } else {
-                None
-            }
-        })
+        .filter(|branch| MAIN_BRANCH_NAMES.contains(&branch.as_str()))
         .collect::<Vec<String>>()
         .first()
         .expect("No main branch found")
         .to_owned()
 }
 
-pub fn all_branch_names(repo_path: &PathBuf) -> Vec<String> {
+pub fn all_branch_names(repo_path: &Path) -> Vec<String> {
     git_command(vec!["branch"], repo_path)
         .expect("Couldn't get branch names")
         .output

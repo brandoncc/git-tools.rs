@@ -1,4 +1,4 @@
-use std::{process::Command, path::PathBuf};
+use std::{process::Command, path::{PathBuf, Path}};
 
 pub struct CommandConfiguration<'a> {
     cmd: &'a str,
@@ -44,9 +44,7 @@ pub fn run_command(config: CommandConfiguration) -> CommandExecutionResult {
 
     let output = command.output();
 
-    if output.is_err() {
-        let err = output.unwrap_err();
-
+    if let Err(err) = output {
         panic!(
             "Failed to execute {:?} with error {:?}",
             command.get_program(),
@@ -74,13 +72,13 @@ pub fn run_command(config: CommandConfiguration) -> CommandExecutionResult {
     }
 }
 
-pub fn git_command(args: Vec<&str>, cwd: &PathBuf) -> CommandExecutionResult {
+pub fn git_command(args: Vec<&str>, cwd: &Path) -> CommandExecutionResult {
     let mut all_args: Vec<&str> = vec!["--no-pager"];
     all_args.extend(args);
 
     run_command(CommandConfiguration {
         cmd: "git",
         args: Some(all_args),
-        cwd,
+        cwd: &cwd.to_path_buf(),
     })
 }
