@@ -25,7 +25,7 @@ fn test_repository_at_returns_a_bare_repository_for_the_bare_root_path() {
     run_test(
         "test_repository_at_returns_a_bare_repository_for_the_bare_root_path",
         BARE_REPO_NAME,
-        |repo| match Repository::at(&repo.root()) {
+        |repo| match Repository::at(repo.root()) {
             Some(r) => assert!(r.is_bare()),
             _ => panic!("Should have returned a BareRepository, but didn't"),
         },
@@ -49,7 +49,7 @@ fn test_repository_at_returns_a_normal_repository() {
     run_test(
         "test_repository_at_returns_a_normal_repository",
         CLEAN_NORMAL_REPO_NAME,
-        |repo| match Repository::at(&repo.root()) {
+        |repo| match Repository::at(repo.root()) {
             Some(r) => assert!(!r.is_bare()),
             _ => panic!("Should have returned a BareRepository, but didn't"),
         },
@@ -81,7 +81,7 @@ fn test_bare_repository_at_with_subdirectory_has_correct_root() {
         |repo| {
             let path = repo.root().join("merged");
             let repo2 = BareRepository::at(&path)
-                .expect(format!("{:#?} is not a valid git repository", &path).as_str());
+                .unwrap_or_else(|| panic!("{:#?} is not a valid git repository", &path));
 
             assert_eq!(repo.root(), &repo2.root);
         },
@@ -95,7 +95,7 @@ fn test_bare_repository_at_with_root_has_correct_root() {
         BARE_REPO_NAME,
         |repo| {
             let repo2 = BareRepository::at(repo.root())
-                .expect(format!("{:#?} is not a valid git repository", repo.root()).as_str());
+                .unwrap_or_else(|| panic!("{:#?} is not a valid git repository", repo.root()));
 
             assert_eq!(repo.root(), &repo2.root);
         },
@@ -110,7 +110,7 @@ fn test_bare_repository_at_with_subdirectory_has_correct_main_branch_name() {
         |repo| {
             let path = repo.root().join("merged");
             let repo2 = BareRepository::at(&path)
-                .expect(format!("{:#?} is not a valid git repository", &path).as_str());
+                .unwrap_or_else(|| panic!("{:#?} is not a valid git repository", &path));
 
             assert_eq!("main", RepositoryInterface::main_branch_name(&repo2));
         },
@@ -124,7 +124,7 @@ fn test_bare_repository_at_with_root_has_correct_main_branch_name() {
         BARE_REPO_NAME,
         |repo| {
             let repo2 = BareRepository::at(repo.root())
-                .expect(format!("{:#?} is not a valid git repository", repo.root()).as_str());
+                .unwrap_or_else(|| panic!("{:#?} is not a valid git repository", repo.root()));
 
             assert_eq!("main", repo2.main_branch_name);
         },
@@ -157,7 +157,7 @@ fn test_normal_repository_at_with_subdirectory_has_correct_root() {
             let path = repo.root().join("subdirectory");
             create_dir(&path).expect("Couldn't create subdirectory");
             let repo2 = NormalRepository::at(&path)
-                .expect(format!("{:#?} is not a valid git repository", &path).as_str());
+                .unwrap_or_else(|| panic!("{:#?} is not a valid git repository", &path));
 
             assert_eq!(repo.root(), &repo2.root);
         },
@@ -171,7 +171,7 @@ fn test_normal_repository_at_with_root_has_correct_root() {
         CLEAN_NORMAL_REPO_NAME,
         |repo| {
             let repo2 = NormalRepository::at(repo.root())
-                .expect(format!("{:#?} is not a valid git repository", repo.root()).as_str());
+                .unwrap_or_else(|| panic!("{:#?} is not a valid git repository", repo.root()));
 
             assert_eq!(repo.root(), &repo2.root);
         },
@@ -187,7 +187,7 @@ fn test_normal_repository_at_with_subdirectory_has_correct_main_branch_name() {
             let path = repo.root().join("subdirectory");
             create_dir(&path).expect("Couldn't create subdirectory");
             let repo = NormalRepository::at(&path)
-                .expect(format!("{:#?} is not a valid git repository", &path).as_str());
+                .unwrap_or_else(|| panic!("{:#?} is not a valid git repository", &path));
 
             assert_eq!("main", repo.main_branch_name);
         },
@@ -200,8 +200,8 @@ fn test_normal_repository_at_with_root_has_correct_main_branch_name() {
         "test_normal_repository_at_with_root_has_correct_main_branch_name",
         CLEAN_NORMAL_REPO_NAME,
         |repo| {
-            let repo = NormalRepository::at(&repo.root())
-                .expect(format!("{:#?} is not a valid git repository", &repo.root()).as_str());
+            let repo = NormalRepository::at(repo.root())
+                .unwrap_or_else(|| panic!("{:#?} is not a valid git repository", &repo.root()));
 
             assert_eq!("main", repo.main_branch_name);
         },

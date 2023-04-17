@@ -55,22 +55,22 @@ pub fn run_command(config: CommandConfiguration) -> CommandExecutionResult {
     }
 
     let result =
-        output.expect(format!("process {:?} failed to execute", command.get_program(),).as_str());
+        output.unwrap_or_else(|_| panic!("process {:?} failed to execute", command.get_program()));
     let exit_code = result.status.code().unwrap_or(-1);
 
-    let stdout = String::from_utf8(result.stdout).unwrap_or(String::new());
+    let stdout = String::from_utf8(result.stdout).unwrap_or_default();
     let items = remove_empty_string_elements(stdout.split('\n').collect::<Vec<&str>>());
 
     if result.status.success() {
-        return Ok(SuccessfulCommandExecution {
+        Ok(SuccessfulCommandExecution {
             exit_code,
             output: items,
-        });
+        })
     } else {
-        return Err(FailedCommandExecution {
+        Err(FailedCommandExecution {
             exit_code,
             output: items,
-        });
+        })
     }
 }
 

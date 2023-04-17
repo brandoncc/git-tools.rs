@@ -25,13 +25,8 @@ impl<'a> WorktreeListItem<'a> {
         let worktree_path = path_portion.trim();
         let absolute_path = worktree_path
             .rsplit_once(' ')
-            .expect(
-                format!(
-                    "Couldn't split on a space, does a space exist? (string: '{}')",
-                    worktree_path
-                )
-                .as_str(),
-            )
+            .unwrap_or_else(|| panic!("Couldn't split on a space, does a space exist? (string: '{}')",
+                    worktree_path))
             .0
             .trim();
 
@@ -63,7 +58,7 @@ impl<'a> WorktreeListItem<'a> {
     fn output_split_on_left_square_bracket(&self) -> (&str, &str) {
         self.list_item_output
             .split_once('[')
-            .expect(format!("Couldn't split '{}' on '['", self.list_item_output).as_str())
+            .unwrap_or_else(|| panic!("Couldn't split '{}' on '['", self.list_item_output))
     }
 }
 

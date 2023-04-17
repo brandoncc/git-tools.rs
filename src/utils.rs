@@ -4,7 +4,7 @@ use crate::commands::git_command;
 
 pub fn expand_path(path: String) -> String {
     PathBuf::from(
-        path.replace("~", &env::var("HOME").unwrap())
+        path.replace('~', &env::var("HOME").unwrap())
             .replace("$USER", &env::var("USER").unwrap()),
     )
     .to_str()
@@ -15,9 +15,7 @@ pub fn expand_path(path: String) -> String {
 pub fn get_current_branch_name(repo_path: &PathBuf) -> String {
     git_command(vec!["branch", "--show-current"], repo_path)
         .expect("Couldn't get current branch")
-        .output
-        .iter()
-        .next()
+        .output.get(0)
         .expect("No output found")
         .to_string()
 }
@@ -35,7 +33,7 @@ pub fn get_bare_root(cwd: &PathBuf) -> Result<PathBuf, String> {
         }
 
         if is_bare_root(&n) {
-            return Ok(n.clone());
+            return Ok(n);
         }
 
         match n.parent() {

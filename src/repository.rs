@@ -82,12 +82,10 @@ impl RepositoryInterface for NormalRepository {
         let mut deleted_current_branch = false;
 
         git_command(vec!["checkout", &self.main_branch_name], &self.root)
-            .expect(format!("Failed to checkout the '{}' branch", self.main_branch_name).as_str());
+            .unwrap_or_else(|_| panic!("Failed to checkout the '{}' branch", self.main_branch_name));
 
         for branch in branches {
-            git_command(vec!["branch", "-d", branch.as_str()], &self.root).expect(
-                format!("An error occurred while deleting the '{}' branch", branch).as_str(),
-            );
+            git_command(vec!["branch", "-d", branch.as_str()], &self.root).unwrap_or_else(|_| panic!("An error occurred while deleting the '{}' branch", branch));
 
             if branch == current_branch {
                 deleted_current_branch = true;
@@ -97,13 +95,8 @@ impl RepositoryInterface for NormalRepository {
         }
 
         if !deleted_current_branch {
-            git_command(vec!["checkout", current_branch.as_str()], &self.root).expect(
-                format!(
-                    "Failed to checkout the original branch ({})",
-                    current_branch
-                )
-                .as_str(),
-            );
+            git_command(vec!["checkout", current_branch.as_str()], &self.root).unwrap_or_else(|_| panic!("Failed to checkout the original branch ({})",
+                    current_branch));
         }
 
         Ok(())
@@ -203,7 +196,7 @@ impl NormalRepository {
         let result = git_command(vec!["status", "--short"], &self.root);
 
         match result {
-            Ok(res) => Ok(res.output.len() == 0),
+            Ok(res) => Ok(res.output.is_empty()),
             Err(res) => Err(format!(
                 "An error occurred while checking if the repo was clean: {}",
                 res.output.join("")
@@ -223,12 +216,8 @@ impl Repository {
         }
 
         match is_bare_repo(path) {
-            true => Some(Box::new(BareRepository::at(path).expect(
-                format!("{:#?} is not a valid git repository", path).as_str(),
-            ))),
-            false => Some(Box::new(NormalRepository::at(path).expect(
-                format!("{:#?} is not a valid git repository", path).as_str(),
-            ))),
+            true => Some(Box::new(BareRepository::at(path).unwrap_or_else(|| panic!("{:#?} is not a valid git repository", path)))),
+            false => Some(Box::new(NormalRepository::at(path).unwrap_or_else(|| panic!("{:#?} is not a valid git repository", path)))),
         }
     }
 }
