@@ -1,4 +1,8 @@
-use crate::{commands::git_command, repository::{BareRepository, RepositoryInterface}, worktree::Worktree};
+use crate::{
+    commands::git_command,
+    repository::{BareRepository, RepositoryInterface},
+    worktree::Worktree,
+};
 
 use self::test_helpers::run_test;
 use super::*;
@@ -120,8 +124,7 @@ fn test_unmerged_worktrees_are_not_removed() {
                 .as_any()
                 .downcast_ref::<BareRepository>()
                 .expect("Should have been a BareRepository, but wasn't");
-            RepositoryInterface::clean_merged(bare_repo)
-                .expect("failed to clean merged worktrees");
+            RepositoryInterface::clean_merged(bare_repo).expect("failed to clean merged worktrees");
 
             test_helpers::assert_worktree_exists(bare_repo, "unmerged".to_string());
         },
@@ -138,10 +141,52 @@ fn test_merged_worktrees_are_removed() {
                 .as_any()
                 .downcast_ref::<BareRepository>()
                 .expect("Should have been a BareRepository, but wasn't");
-            RepositoryInterface::clean_merged(bare_repo)
-                .expect("failed to clean merged worktrees");
+            RepositoryInterface::clean_merged(bare_repo).expect("failed to clean merged worktrees");
 
             test_helpers::assert_worktree_does_not_exist(bare_repo, "merged".to_string());
+        },
+    );
+}
+
+#[test]
+fn test_branches_are_removed_for_worktrees_that_are_removed() {
+    run_test(
+        "test_branches_are_removed_for_worktrees_that_are_removed",
+        test_setup::BARE_REPO_NAME,
+        |repo| {
+            test_helpers::assert_branch_exists(&repo, "merged".to_string());
+
+            let bare_repo = repo
+                .as_any()
+                .downcast_ref::<BareRepository>()
+                .expect("Should have been a BareRepository, but wasn't");
+            RepositoryInterface::clean_merged(bare_repo).expect("failed to clean merged worktrees");
+
+            test_helpers::assert_branch_does_not_exist(&repo, "merged".to_string());
+        },
+    );
+}
+
+#[test]
+fn test_branches_are_removed_for_worktrees_that_are_removed_when_path_doesnt_match_worktree() {
+    run_test(
+        "test_branches_are_removed_for_worktrees_that_are_removed_when_path_doesnt_match_worktree",
+        test_setup::BARE_REPO_NAME,
+        |repo| {
+            let bare_repo = repo
+                .as_any()
+                .downcast_ref::<BareRepository>()
+                .expect("Should have been a BareRepository, but wasn't");
+
+            test_helpers::assert_worktree_exists(bare_repo, "wont-match-path".to_string());
+            test_helpers::assert_branch_exists(&repo, "wont-match-path".to_string());
+
+
+
+            RepositoryInterface::clean_merged(bare_repo).expect("failed to clean merged worktrees");
+
+            test_helpers::assert_worktree_does_not_exist(bare_repo, "wont-match-path".to_string());
+            test_helpers::assert_branch_does_not_exist(&repo, "wont-match-path".to_string());
         },
     );
 }
@@ -156,8 +201,7 @@ fn test_main_worktree_is_not_removed() {
                 .as_any()
                 .downcast_ref::<BareRepository>()
                 .expect("Should have been a BareRepository, but wasn't");
-            RepositoryInterface::clean_merged(bare_repo)
-                .expect("failed to clean merged worktrees");
+            RepositoryInterface::clean_merged(bare_repo).expect("failed to clean merged worktrees");
 
             test_helpers::assert_worktree_exists(bare_repo, "main".to_string());
         },
@@ -194,6 +238,11 @@ fn test_worktree_list_is_parsed_correctly() {
                     repository: bare_repo,
                 },
                 Worktree {
+                    name: "wont-match-path".to_string(),
+                    path: "origin/doesnt-match-name".to_string(),
+                    repository: bare_repo,
+                },
+                Worktree {
                     name: "other-branch".to_string(),
                     path: "origin/other-branch".to_string(),
                     repository: bare_repo,
@@ -204,8 +253,6 @@ fn test_worktree_list_is_parsed_correctly() {
                     repository: bare_repo,
                 },
             ];
-
-            println!("worktrees: {:?}", worktrees);
 
             assert_eq!(expected, worktrees);
         },

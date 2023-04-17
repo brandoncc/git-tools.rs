@@ -25,44 +25,88 @@ pub fn setup(test_name: &str, bare_repo: bool) -> Result<(), Box<dyn Error>> {
 fn create_bare_repo(test_name: &str) -> Result<(), Box<dyn Error>> {
     Command::new("mkdir")
         .arg("-p")
-        .arg(format!("{}/{}/bare_repo_source", DUMMY_REPOS_DIRECTORY, test_name))
+        .arg(format!(
+            "{}/{}/bare_repo_source",
+            DUMMY_REPOS_DIRECTORY, test_name
+        ))
         .output()?;
 
     Command::new("git")
         .arg("init")
-        .current_dir(format!("{}/{}/bare_repo_source", DUMMY_REPOS_DIRECTORY, test_name))
+        .current_dir(format!(
+            "{}/{}/bare_repo_source",
+            DUMMY_REPOS_DIRECTORY, test_name
+        ))
         .output()?;
 
     Command::new("touch")
         .arg("README.md")
-        .current_dir(format!("{}/{}/bare_repo_source", DUMMY_REPOS_DIRECTORY, test_name))
+        .current_dir(format!(
+            "{}/{}/bare_repo_source",
+            DUMMY_REPOS_DIRECTORY, test_name
+        ))
         .output()?;
 
     Command::new("git")
         .arg("add")
         .arg("README.md")
-        .current_dir(format!("{}/{}/bare_repo_source", DUMMY_REPOS_DIRECTORY, test_name))
+        .current_dir(format!(
+            "{}/{}/bare_repo_source",
+            DUMMY_REPOS_DIRECTORY, test_name
+        ))
         .output()?;
 
     Command::new("git")
         .arg("commit")
         .arg("-m")
         .arg("commit readme")
-        .current_dir(format!("{}/{}/bare_repo_source", DUMMY_REPOS_DIRECTORY, test_name))
+        .current_dir(format!(
+            "{}/{}/bare_repo_source",
+            DUMMY_REPOS_DIRECTORY, test_name
+        ))
         .output()?;
 
     Command::new("git")
         .arg("checkout")
         .arg("-b")
         .arg("other-branch")
-        .current_dir(format!("{}/{}/bare_repo_source", DUMMY_REPOS_DIRECTORY, test_name))
+        .current_dir(format!(
+            "{}/{}/bare_repo_source",
+            DUMMY_REPOS_DIRECTORY, test_name
+        ))
+        .output()?;
+
+    Command::new("git")
+        .arg("checkout")
+        .arg("-b")
+        .arg("wont-match-path")
+        .current_dir(format!(
+            "{}/{}/bare_repo_source",
+            DUMMY_REPOS_DIRECTORY, test_name
+        ))
+        .output()?;
+
+    // Make sure we are on the main branch so that becomes the tracked main branch in the bare repo
+    Command::new("git")
+        .arg("checkout")
+        .arg("main")
+        .current_dir(format!(
+            "{}/{}/bare_repo_source",
+            DUMMY_REPOS_DIRECTORY, test_name
+        ))
         .output()?;
 
     Command::new("git")
         .arg("clone")
         .arg("--bare")
-        .arg(format!("{}/{}/bare_repo_source", DUMMY_REPOS_DIRECTORY, test_name))
-        .arg(format!("{}/{}/{}", DUMMY_REPOS_DIRECTORY, test_name, BARE_REPO_NAME))
+        .arg(format!(
+            "{}/{}/bare_repo_source",
+            DUMMY_REPOS_DIRECTORY, test_name
+        ))
+        .arg(format!(
+            "{}/{}/{}",
+            DUMMY_REPOS_DIRECTORY, test_name, BARE_REPO_NAME
+        ))
         .output()?;
 
     Ok(())
@@ -74,7 +118,10 @@ fn create_worktree(
     worktree_path: Option<&str>,
 ) -> Result<(), Box<dyn Error>> {
     let mut command = Command::new("git");
-    command.current_dir(format!("{}/{}/{}", DUMMY_REPOS_DIRECTORY, test_name, BARE_REPO_NAME));
+    command.current_dir(format!(
+        "{}/{}/{}",
+        DUMMY_REPOS_DIRECTORY, test_name, BARE_REPO_NAME
+    ));
     command.arg("worktree").arg("add");
 
     if let Some(path) = worktree_path {
@@ -92,6 +139,11 @@ fn setup_worktrees(test_name: &str) -> Result<(), Box<dyn Error>> {
     create_worktree(test_name, "unmerged", None)?;
     create_worktree(test_name, "merged", None)?;
     create_worktree(test_name, "other-branch", Some("origin/other-branch"))?;
+    create_worktree(
+        test_name,
+        "wont-match-path",
+        Some("origin/doesnt-match-name"),
+    )?;
 
     Command::new("touch")
         .arg("uncommitted-file")
@@ -148,9 +200,36 @@ fn setup_worktrees(test_name: &str) -> Result<(), Box<dyn Error>> {
     Command::new("git")
         .arg("commit")
         .arg("-m")
-        .arg("file that will be merged")
+        .arg("file that will merged")
         .current_dir(format!(
             "dummy_repos/{}/{}/merged",
+            test_name, BARE_REPO_NAME
+        ))
+        .output()?;
+
+    Command::new("touch")
+        .arg("merged file 2")
+        .current_dir(format!(
+            "dummy_repos/{}/{}/origin/doesnt-match-name",
+            test_name, BARE_REPO_NAME
+        ))
+        .output()?;
+
+    Command::new("git")
+        .arg("add")
+        .arg("merged file 2")
+        .current_dir(format!(
+            "dummy_repos/{}/{}/origin/doesnt-match-name",
+            test_name, BARE_REPO_NAME
+        ))
+        .output()?;
+
+    Command::new("git")
+        .arg("commit")
+        .arg("-m")
+        .arg("file that will be merged")
+        .current_dir(format!(
+            "dummy_repos/{}/{}/origin/doesnt-match-name",
             test_name, BARE_REPO_NAME
         ))
         .output()?;
@@ -158,7 +237,19 @@ fn setup_worktrees(test_name: &str) -> Result<(), Box<dyn Error>> {
     Command::new("git")
         .arg("merge")
         .arg("merged")
-        .current_dir(format!("{}/{}/{}/main", DUMMY_REPOS_DIRECTORY, test_name, BARE_REPO_NAME))
+        .current_dir(format!(
+            "{}/{}/{}/main",
+            DUMMY_REPOS_DIRECTORY, test_name, BARE_REPO_NAME
+        ))
+        .output()?;
+
+    Command::new("git")
+        .arg("merge")
+        .arg("wont-match-path")
+        .current_dir(format!(
+            "{}/{}/{}/main",
+            DUMMY_REPOS_DIRECTORY, test_name, BARE_REPO_NAME
+        ))
         .output()?;
 
     Ok(())

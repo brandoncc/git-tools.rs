@@ -65,8 +65,12 @@ pub fn run_test(test_name: &str, repo_directory: &str, test: fn(Box<dyn Reposito
 
     let cwd = get_cwd();
     let cwd_str = cwd.to_str().expect("Couldn't convert cwd to str");
-    let repo_path = PathBuf::from(format!("{}/{}/{}/{}", cwd_str, DUMMY_REPOS_DIRECTORY, test_name, repo_directory));
-    let repository = Repository::at(&repo_path).expect(format!("{:#?} is not a valid git repository", repo_path).as_str());
+    let repo_path = PathBuf::from(format!(
+        "{}/{}/{}/{}",
+        cwd_str, DUMMY_REPOS_DIRECTORY, test_name, repo_directory
+    ));
+    let repository = Repository::at(&repo_path)
+        .expect(format!("{:#?} is not a valid git repository", repo_path).as_str());
 
     test(repository);
     run_teardown(test_name);
