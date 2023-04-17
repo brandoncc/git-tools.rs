@@ -168,7 +168,7 @@ impl BareRepository {
         let all = self.all_worktrees().expect("Couldn't get all worktrees");
         let not_merged = all
             .into_iter()
-            .filter(|w| merged.contains(&w.path))
+            .filter(|w| merged.contains(&w.name))
             .collect::<Vec<Worktree>>();
 
         Ok(not_merged)

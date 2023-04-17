@@ -39,6 +39,14 @@ impl<'a> Worktree<'a> {
         ) {
             Ok(_) => Ok(()),
             Err(result) => Err(format!("{}", result.output.join(","))),
+        }?;
+
+        match git_command(
+            vec!["branch", "-d", &self.name],
+            RepositoryInterface::root(self.repository),
+        ) {
+            Ok(_) => Ok(()),
+            Err(result) => Err(format!("{}", result.output.join(","))),
         }
     }
 
