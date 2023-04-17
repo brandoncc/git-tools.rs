@@ -70,7 +70,7 @@ pub fn run_test(test_name: &str, repo_directory: &str, test: fn(Box<dyn Reposito
         cwd_str, DUMMY_REPOS_DIRECTORY, test_name, repo_directory
     ));
     let repository = Repository::at(&repo_path)
-        .expect(format!("{:#?} is not a valid git repository", repo_path).as_str());
+        .unwrap_or_else(|| panic!("{:#?} is not a valid git repository", repo_path));
 
     test(repository);
     run_teardown(test_name);

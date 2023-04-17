@@ -1,4 +1,4 @@
-use std::{process::Command, path::PathBuf};
+use std::{process::Command, path::{PathBuf, Path}};
 
 pub struct CommandConfiguration<'a> {
     cmd: &'a str,
@@ -44,9 +44,7 @@ pub fn run_command(config: CommandConfiguration) -> CommandExecutionResult {
 
     let output = command.output();
 
-    if output.is_err() {
-        let err = output.unwrap_err();
-
+    if let Err(err) = output {
         panic!(
             "Failed to execute {:?} with error {:?}",
             command.get_program(),
@@ -55,32 +53,32 @@ pub fn run_command(config: CommandConfiguration) -> CommandExecutionResult {
     }
 
     let result =
-        output.expect(format!("process {:?} failed to execute", command.get_program(),).as_str());
+        output.unwrap_or_else(|_| panic!("process {:?} failed to execute", command.get_program()));
     let exit_code = result.status.code().unwrap_or(-1);
 
-    let stdout = String::from_utf8(result.stdout).unwrap_or(String::new());
+    let stdout = String::from_utf8(result.stdout).unwrap_or_default();
     let items = remove_empty_string_elements(stdout.split('\n').collect::<Vec<&str>>());
 
     if result.status.success() {
-        return Ok(SuccessfulCommandExecution {
+        Ok(SuccessfulCommandExecution {
             exit_code,
             output: items,
-        });
+        })
     } else {
-        return Err(FailedCommandExecution {
+        Err(FailedCommandExecution {
             exit_code,
             output: items,
-        });
+        })
     }
 }
 
-pub fn git_command(args: Vec<&str>, cwd: &PathBuf) -> CommandExecutionResult {
+pub fn git_command(args: Vec<&str>, cwd: &Path) -> CommandExecutionResult {
     let mut all_args: Vec<&str> = vec!["--no-pager"];
     all_args.extend(args);
 
     run_command(CommandConfiguration {
         cmd: "git",
         args: Some(all_args),
-        cwd,
+        cwd: &cwd.to_path_buf(),
     })
 }

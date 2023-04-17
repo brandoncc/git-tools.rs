@@ -38,7 +38,7 @@ impl<'a> Worktree<'a> {
             RepositoryInterface::root(self.repository),
         ) {
             Ok(_) => Ok(()),
-            Err(result) => Err(format!("{}", result.output.join(","))),
+            Err(result) => Err(result.output.join(",")),
         }?;
 
         match git_command(
@@ -46,7 +46,7 @@ impl<'a> Worktree<'a> {
             RepositoryInterface::root(self.repository),
         ) {
             Ok(_) => Ok(()),
-            Err(result) => Err(format!("{}", result.output.join(","))),
+            Err(result) => Err(result.output.join(",")),
         }
     }
 
@@ -57,7 +57,7 @@ impl<'a> Worktree<'a> {
         );
 
         match result {
-            Ok(res) => res.output.len() == 0,
+            Ok(res) => res.output.is_empty(),
             Err(_) => false,
         }
     }

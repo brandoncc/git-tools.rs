@@ -53,7 +53,7 @@ fn get_command() -> AvailableCommands {
 fn main() {
     let cwd = get_cwd();
     let repo = repository::Repository::at(&cwd)
-        .expect(format!("{:#?} is not a valid git repository", cwd).as_str());
+        .unwrap_or_else(|| panic!("{:#?} is not a valid git repository", cwd));
 
     match get_command() {
         AvailableCommands::CleanMergedBranches => match repo.clean_merged() {
