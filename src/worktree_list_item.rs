@@ -1,6 +1,4 @@
-use std::path::Path;
-
-use crate::repository::{BareRepository, RepositoryInterface};
+use crate::repository::BareRepository;
 
 // This is a way to store one line from `git worktree list` so that it can be easily coerced into a
 // Worktree
@@ -37,16 +35,7 @@ impl<'a> WorktreeListItem<'a> {
             .0
             .trim();
 
-        let relative_path = Path::new(absolute_path)
-            .strip_prefix(RepositoryInterface::root(self.repository))
-            .expect("Couldn't strip repo path from full path");
-
-        Some(
-            relative_path
-                .to_str()
-                .expect("Couldn't convert path to str")
-                .to_string(),
-        )
+        Some(absolute_path.to_string())
     }
 
     pub fn name(&self) -> Option<String> {

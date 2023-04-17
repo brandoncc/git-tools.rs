@@ -15,7 +15,7 @@ fn test_path_output_does_not_include_repo_path() {
     };
     let item = WorktreeListItem::new(&repo, "/a/repo/some-work f9e08b4 [some-work]".to_string());
 
-    assert_eq!(Some("some-work".to_string()), item.path());
+    assert_eq!(Some("/a/repo/some-work".to_string()), item.path());
 }
 
 #[test]
@@ -26,7 +26,7 @@ fn test_path_worktree_path_and_repo_path_can_include_spaces() {
     };
     let item = WorktreeListItem::new(&repo, "/a/repo with  spaces/some-work f9e08b4 [some-work]".to_string());
 
-    assert_eq!(Some("some-work".to_string()), item.path());
+    assert_eq!(Some("/a/repo with  spaces/some-work".to_string()), item.path());
 }
 
 #[test]
@@ -40,7 +40,7 @@ fn test_path_worktree_path_and_git_hash_can_be_separated_by_multiple_spaces() {
         "/a/repo with  spaces/some-work     f9e08b4 [some-work]".to_string(),
     );
 
-    assert_eq!(Some("some-work".to_string()), item.path());
+    assert_eq!(Some("/a/repo with  spaces/some-work".to_string()), item.path());
 }
 
 #[test]
@@ -54,7 +54,7 @@ fn test_path_worktree_path_and_repo_path_can_include_symbols() {
         "/a/repo with-_ ^symbols/some-work     f9e08b4 [some-work]".to_string(),
     );
 
-    assert_eq!(Some("some-work".to_string()), item.path());
+    assert_eq!(Some("/a/repo with-_ ^symbols/some-work".to_string()), item.path());
 }
 
 #[test]
@@ -65,7 +65,7 @@ fn test_path_can_have_a_subdirectory() {
     };
     let item = WorktreeListItem::new(&repo, "/a/repo/origin/some-work     f9e08b4 [some-work]".to_string());
 
-    assert_eq!(Some("origin/some-work".to_string()), item.path());
+    assert_eq!(Some("/a/repo/origin/some-work".to_string()), item.path());
 }
 
 #[test]
@@ -194,7 +194,7 @@ fn test_prunable_worktree_is_parsed_properly() {
 
     assert_eq!("some-work", item.name().expect("Couldn't parse name"));
     assert_eq!(
-        "some  work in a prunable worktree",
+        "/a/repo/some  work in a prunable worktree",
         item.path().expect("Couldn't parse path")
     );
 }

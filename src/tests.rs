@@ -181,8 +181,6 @@ fn test_branches_are_removed_for_worktrees_that_are_removed_when_path_doesnt_mat
             test_helpers::assert_worktree_exists(bare_repo, "wont-match-path".to_string());
             test_helpers::assert_branch_exists(&repo, "wont-match-path".to_string());
 
-
-
             RepositoryInterface::clean_merged(bare_repo).expect("failed to clean merged worktrees");
 
             test_helpers::assert_worktree_does_not_exist(bare_repo, "wont-match-path".to_string());
@@ -224,32 +222,32 @@ fn test_worktree_list_is_parsed_correctly() {
             let expected = vec![
                 Worktree {
                     name: "dirty".to_string(),
-                    path: "dirty".to_string(),
+                    path: "/Users/brandoncc/dev/git-tools/dummy_repos/test_worktree_list_is_parsed_correctly/bare repo  -_^^ with symbols and spaces/dirty".to_string(),
                     repository: bare_repo,
                 },
                 Worktree {
                     name: "main".to_string(),
-                    path: "main".to_string(),
+                    path: "/Users/brandoncc/dev/git-tools/dummy_repos/test_worktree_list_is_parsed_correctly/bare repo  -_^^ with symbols and spaces/main".to_string(),
                     repository: bare_repo,
                 },
                 Worktree {
                     name: "merged".to_string(),
-                    path: "merged".to_string(),
+                    path: "/Users/brandoncc/dev/git-tools/dummy_repos/test_worktree_list_is_parsed_correctly/bare repo  -_^^ with symbols and spaces/merged".to_string(),
                     repository: bare_repo,
                 },
                 Worktree {
                     name: "wont-match-path".to_string(),
-                    path: "origin/doesnt-match-name".to_string(),
+                    path: "/Users/brandoncc/dev/git-tools/dummy_repos/test_worktree_list_is_parsed_correctly/bare repo  -_^^ with symbols and spaces/origin/doesnt-match-name".to_string(),
                     repository: bare_repo,
                 },
                 Worktree {
                     name: "other-branch".to_string(),
-                    path: "origin/other-branch".to_string(),
+                    path: "/Users/brandoncc/dev/git-tools/dummy_repos/test_worktree_list_is_parsed_correctly/bare repo  -_^^ with symbols and spaces/origin/other-branch".to_string(),
                     repository: bare_repo,
                 },
                 Worktree {
                     name: "unmerged".to_string(),
-                    path: "unmerged".to_string(),
+                    path: "/Users/brandoncc/dev/git-tools/dummy_repos/test_worktree_list_is_parsed_correctly/bare repo  -_^^ with symbols and spaces/unmerged".to_string(),
                     repository: bare_repo,
                 },
             ];
