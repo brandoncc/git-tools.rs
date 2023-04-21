@@ -40,14 +40,21 @@ impl<'a> RepositoryInterface for BareRepository {
             .expect("Couldn't get the list of merged worktrees");
 
         for worktree in worktrees {
-            if (worktree.name != self.main_branch_name) && worktree.is_clean() {
-                match worktree.delete() {
-                    Ok(_) => println!("Deleted worktree: {}", worktree.path),
-                    Err(msg) => println!(
-                        "Couldn't delete worktree '{}', error: {}",
-                        worktree.path, msg
-                    ),
+            if worktree.is_clean() {
+                if worktree.name != self.main_branch_name {
+                    match worktree.delete() {
+                        Ok(_) => println!("Deleted worktree: {}", worktree.path),
+                        Err(msg) => println!(
+                            "Couldn't delete worktree '{}', error: {}",
+                            worktree.path, msg
+                        ),
+                    }
                 }
+            } else {
+                println!(
+                    "Couldn't delete worktree '{}' ({}) because it contains unstaged changes",
+                    worktree.name, worktree.path
+                );
             }
         }
 
