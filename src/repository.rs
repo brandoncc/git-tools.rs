@@ -1,4 +1,7 @@
-use std::{any::Any, path::{PathBuf, Path}};
+use std::{
+    any::Any,
+    path::{Path, PathBuf},
+};
 
 use crate::{
     commands::git_command,
@@ -88,11 +91,14 @@ impl RepositoryInterface for NormalRepository {
 
         let mut deleted_current_branch = false;
 
-        git_command(vec!["checkout", &self.main_branch_name], &self.root)
-            .unwrap_or_else(|_| panic!("Failed to checkout the '{}' branch", self.main_branch_name));
+        git_command(vec!["checkout", &self.main_branch_name], &self.root).unwrap_or_else(|_| {
+            panic!("Failed to checkout the '{}' branch", self.main_branch_name)
+        });
 
         for branch in branches {
-            git_command(vec!["branch", "-d", branch.as_str()], &self.root).unwrap_or_else(|_| panic!("An error occurred while deleting the '{}' branch", branch));
+            git_command(vec!["branch", "-d", branch.as_str()], &self.root).unwrap_or_else(|_| {
+                panic!("An error occurred while deleting the '{}' branch", branch)
+            });
 
             if branch == current_branch {
                 deleted_current_branch = true;
@@ -102,8 +108,14 @@ impl RepositoryInterface for NormalRepository {
         }
 
         if !deleted_current_branch {
-            git_command(vec!["checkout", current_branch.as_str()], &self.root).unwrap_or_else(|_| panic!("Failed to checkout the original branch ({})",
-                    current_branch));
+            git_command(vec!["checkout", current_branch.as_str()], &self.root).unwrap_or_else(
+                |_| {
+                    panic!(
+                        "Failed to checkout the original branch ({})",
+                        current_branch
+                    )
+                },
+            );
         }
 
         Ok(())
@@ -223,8 +235,12 @@ impl Repository {
         }
 
         match is_bare_repo(path) {
-            true => Some(Box::new(BareRepository::at(path).unwrap_or_else(|| panic!("{:#?} is not a valid git repository", path)))),
-            false => Some(Box::new(NormalRepository::at(path).unwrap_or_else(|| panic!("{:#?} is not a valid git repository", path)))),
+            true => Some(Box::new(BareRepository::at(path).unwrap_or_else(|| {
+                panic!("{:#?} is not a valid git repository", path)
+            }))),
+            false => Some(Box::new(NormalRepository::at(path).unwrap_or_else(|| {
+                panic!("{:#?} is not a valid git repository", path)
+            }))),
         }
     }
 }
