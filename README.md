@@ -21,5 +21,6 @@ unexpected branch or worktree are deleted.
 - [X] When parsing `git worktree --list`, use the whole path instead of just the relative path.
 - [ ] Add a "dry run" mode so that you can see what will be deleted
 - [ ] Remove as many object duplications (`clone()`/`to_owned()`) as possible
-- [ ] Fix CI -- `git checkout`/`git commit` don't seem to work correctly, so the dummy repos don't get setup correctly
+- [X] Fix CI -- `git checkout`/`git commit` don't seem to work correctly, so the dummy repos don't get setup correctly
+  - This was caused by git not having a user.name and user.email set, so commits couldn't be created in tests.
 - [ ] Allow the tools to run on Windows. Right now, the `/` character is hard-coded as the directory separator.
