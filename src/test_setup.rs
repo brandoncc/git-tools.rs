@@ -4,6 +4,7 @@ pub const BARE_REPO_NAME: &str = "bare repo  -_^^ with symbols and spaces";
 pub const CLEAN_NORMAL_REPO_NAME: &str = "clean_repo";
 pub const DIRTY_NORMAL_REPO_NAME: &str = "dirty_repo";
 pub const DUMMY_REPOS_DIRECTORY: &str = "dummy_repos";
+pub const DEFAULT_BRANCH_NAME: &str = "main";
 
 pub fn setup(test_name: &str, bare_repo: bool) -> Result<(), Box<dyn Error>> {
     println!("test_name: {:?}", test_name);
@@ -23,21 +24,10 @@ pub fn setup(test_name: &str, bare_repo: bool) -> Result<(), Box<dyn Error>> {
 }
 
 fn create_bare_repo(test_name: &str) -> Result<(), Box<dyn Error>> {
-    Command::new("mkdir")
-        .arg("-p")
-        .arg(format!(
-            "{}/{}/bare_repo_source",
-            DUMMY_REPOS_DIRECTORY, test_name
-        ))
-        .output()?;
-
-    Command::new("git")
-        .arg("init")
-        .current_dir(format!(
-            "{}/{}/bare_repo_source",
-            DUMMY_REPOS_DIRECTORY, test_name
-        ))
-        .output()?;
+    create_repository(format!(
+        "{}/{}/bare_repo_source",
+        DUMMY_REPOS_DIRECTORY, test_name
+    ))?;
 
     Command::new("touch")
         .arg("README.md")
@@ -86,29 +76,65 @@ fn create_bare_repo(test_name: &str) -> Result<(), Box<dyn Error>> {
         ))
         .output()?;
 
-    // Make sure we are on the main branch so that becomes the tracked main branch in the bare repo
+    clone_to_bare_repository(
+        format!("{}/{}/bare_repo_source", DUMMY_REPOS_DIRECTORY, test_name),
+        format!("{}/{}/{}", DUMMY_REPOS_DIRECTORY, test_name, BARE_REPO_NAME),
+    )?;
+
+    Ok(())
+}
+
+// Always use this helper so that the proper name/email config is in place in the repo even in CI
+fn clone_to_bare_repository(
+    source_path: String,
+    target_path: String,
+) -> Result<(), Box<dyn Error>> {
     Command::new("git")
         .arg("checkout")
-        .arg("main")
-        .current_dir(format!(
-            "{}/{}/bare_repo_source",
-            DUMMY_REPOS_DIRECTORY, test_name
-        ))
+        .arg(DEFAULT_BRANCH_NAME)
+        .current_dir(&source_path)
         .output()?;
-
     Command::new("git")
         .arg("clone")
         .arg("--bare")
-        .arg(format!(
-            "{}/{}/bare_repo_source",
-            DUMMY_REPOS_DIRECTORY, test_name
-        ))
-        .arg(format!(
-            "{}/{}/{}",
-            DUMMY_REPOS_DIRECTORY, test_name, BARE_REPO_NAME
-        ))
+        .arg(&source_path)
+        .arg(&target_path)
         .output()?;
+    Command::new("git")
+        .arg("config")
+        .arg("user.email")
+        .arg("testrunner@local")
+        .current_dir(&target_path)
+        .output()?;
+    Command::new("git")
+        .arg("config")
+        .arg("user.name")
+        .arg("Test Runner")
+        .current_dir(&target_path)
+        .output()?;
+    Ok(())
+}
 
+// Always use this helper so that the proper name/email config is in place in the repo even in CI
+fn create_repository(directory: String) -> Result<(), Box<dyn Error>> {
+    Command::new("mkdir").arg("-p").arg(&directory).output()?;
+    Command::new("git")
+        .arg("init")
+        .arg(format!("--initial-branch={}", DEFAULT_BRANCH_NAME))
+        .current_dir(&directory)
+        .output()?;
+    Command::new("git")
+        .arg("config")
+        .arg("user.email")
+        .arg("testrunner@local")
+        .current_dir(&directory)
+        .output()?;
+    Command::new("git")
+        .arg("config")
+        .arg("user.name")
+        .arg("Test Runner")
+        .current_dir(&directory)
+        .output()?;
     Ok(())
 }
 
@@ -118,10 +144,9 @@ fn create_worktree(
     worktree_path: Option<&str>,
 ) -> Result<(), Box<dyn Error>> {
     let mut command = Command::new("git");
-    command.current_dir(format!(
-        "{}/{}/{}",
-        DUMMY_REPOS_DIRECTORY, test_name, BARE_REPO_NAME
-    ));
+    let bare_repo_path = format!("{}/{}/{}", DUMMY_REPOS_DIRECTORY, test_name, BARE_REPO_NAME);
+
+    command.current_dir(bare_repo_path);
     command.arg("worktree").arg("add");
 
     if let Some(path) = worktree_path {
@@ -134,7 +159,7 @@ fn create_worktree(
 }
 
 fn setup_worktrees(test_name: &str) -> Result<(), Box<dyn Error>> {
-    create_worktree(test_name, "main", None)?;
+    create_worktree(test_name, DEFAULT_BRANCH_NAME, None)?;
     create_worktree(test_name, "dirty", None)?;
     create_worktree(test_name, "unmerged", None)?;
     create_worktree(test_name, "merged", None)?;
@@ -263,21 +288,10 @@ fn create_normal_repos(test_name: &str) -> Result<(), Box<dyn Error>> {
 }
 
 fn create_clean_repo(test_name: &str) -> Result<(), Box<dyn Error>> {
-    Command::new("mkdir")
-        .arg("-p")
-        .arg(format!(
-            "dummy_repos/{}/{}",
-            test_name, CLEAN_NORMAL_REPO_NAME
-        ))
-        .output()?;
-
-    Command::new("git")
-        .arg("init")
-        .current_dir(format!(
-            "dummy_repos/{}/{}",
-            test_name, CLEAN_NORMAL_REPO_NAME
-        ))
-        .output()?;
+    create_repository(format!(
+        "dummy_repos/{}/{}",
+        test_name, CLEAN_NORMAL_REPO_NAME
+    ))?;
 
     Command::new("touch")
         .arg("README.md")
@@ -345,7 +359,7 @@ fn create_clean_repo(test_name: &str) -> Result<(), Box<dyn Error>> {
 
     Command::new("git")
         .arg("checkout")
-        .arg("main")
+        .arg(DEFAULT_BRANCH_NAME)
         .current_dir(format!(
             "dummy_repos/{}/{}",
             test_name, CLEAN_NORMAL_REPO_NAME
@@ -391,7 +405,7 @@ fn create_clean_repo(test_name: &str) -> Result<(), Box<dyn Error>> {
 
     Command::new("git")
         .arg("checkout")
-        .arg("main")
+        .arg(DEFAULT_BRANCH_NAME)
         .current_dir(format!(
             "dummy_repos/{}/{}",
             test_name, CLEAN_NORMAL_REPO_NAME
@@ -411,21 +425,10 @@ fn create_clean_repo(test_name: &str) -> Result<(), Box<dyn Error>> {
 }
 
 fn create_dirty_repo(test_name: &str) -> Result<(), Box<dyn Error>> {
-    Command::new("mkdir")
-        .arg("-p")
-        .arg(format!(
-            "dummy_repos/{}/{}",
-            test_name, DIRTY_NORMAL_REPO_NAME
-        ))
-        .output()?;
-
-    Command::new("git")
-        .arg("init")
-        .current_dir(format!(
-            "dummy_repos/{}/{}",
-            test_name, DIRTY_NORMAL_REPO_NAME
-        ))
-        .output()?;
+    create_repository(format!(
+        "dummy_repos/{}/{}",
+        test_name, DIRTY_NORMAL_REPO_NAME
+    ))?;
 
     Command::new("touch")
         .arg("README.md")
@@ -493,7 +496,7 @@ fn create_dirty_repo(test_name: &str) -> Result<(), Box<dyn Error>> {
 
     Command::new("git")
         .arg("checkout")
-        .arg("main")
+        .arg(DEFAULT_BRANCH_NAME)
         .current_dir(format!(
             "dummy_repos/{}/{}",
             test_name, DIRTY_NORMAL_REPO_NAME
@@ -539,7 +542,7 @@ fn create_dirty_repo(test_name: &str) -> Result<(), Box<dyn Error>> {
 
     Command::new("git")
         .arg("checkout")
-        .arg("main")
+        .arg(DEFAULT_BRANCH_NAME)
         .current_dir(format!(
             "dummy_repos/{}/{}",
             test_name, DIRTY_NORMAL_REPO_NAME

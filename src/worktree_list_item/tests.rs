@@ -5,13 +5,16 @@ use std::path::PathBuf;
 use crate::repository::BareRepository;
 
 #[cfg(test)]
+use crate::test_setup::DEFAULT_BRANCH_NAME;
+
+#[cfg(test)]
 use super::WorktreeListItem;
 
 #[test]
 fn test_path_output_does_not_include_repo_path() {
     let repo = BareRepository {
         root: PathBuf::from("/a/repo"),
-        main_branch_name: "main".to_string(),
+        main_branch_name: DEFAULT_BRANCH_NAME.to_string(),
     };
     let item = WorktreeListItem::new(&repo, "/a/repo/some-work f9e08b4 [some-work]".to_string());
 
@@ -22,48 +25,63 @@ fn test_path_output_does_not_include_repo_path() {
 fn test_path_worktree_path_and_repo_path_can_include_spaces() {
     let repo = BareRepository {
         root: PathBuf::from("/a/repo with  spaces"),
-        main_branch_name: "main".to_string(),
+        main_branch_name: DEFAULT_BRANCH_NAME.to_string(),
     };
-    let item = WorktreeListItem::new(&repo, "/a/repo with  spaces/some-work f9e08b4 [some-work]".to_string());
+    let item = WorktreeListItem::new(
+        &repo,
+        "/a/repo with  spaces/some-work f9e08b4 [some-work]".to_string(),
+    );
 
-    assert_eq!(Some("/a/repo with  spaces/some-work".to_string()), item.path());
+    assert_eq!(
+        Some("/a/repo with  spaces/some-work".to_string()),
+        item.path()
+    );
 }
 
 #[test]
 fn test_path_worktree_path_and_git_hash_can_be_separated_by_multiple_spaces() {
     let repo = BareRepository {
         root: PathBuf::from("/a/repo with  spaces"),
-        main_branch_name: "main".to_string(),
+        main_branch_name: DEFAULT_BRANCH_NAME.to_string(),
     };
     let item = WorktreeListItem::new(
         &repo,
         "/a/repo with  spaces/some-work     f9e08b4 [some-work]".to_string(),
     );
 
-    assert_eq!(Some("/a/repo with  spaces/some-work".to_string()), item.path());
+    assert_eq!(
+        Some("/a/repo with  spaces/some-work".to_string()),
+        item.path()
+    );
 }
 
 #[test]
 fn test_path_worktree_path_and_repo_path_can_include_symbols() {
     let repo = BareRepository {
         root: PathBuf::from("/a/repo with-_ ^symbols"),
-        main_branch_name: "main".to_string(),
+        main_branch_name: DEFAULT_BRANCH_NAME.to_string(),
     };
     let item = WorktreeListItem::new(
         &repo,
         "/a/repo with-_ ^symbols/some-work     f9e08b4 [some-work]".to_string(),
     );
 
-    assert_eq!(Some("/a/repo with-_ ^symbols/some-work".to_string()), item.path());
+    assert_eq!(
+        Some("/a/repo with-_ ^symbols/some-work".to_string()),
+        item.path()
+    );
 }
 
 #[test]
 fn test_path_can_have_a_subdirectory() {
     let repo = BareRepository {
         root: PathBuf::from("/a/repo"),
-        main_branch_name: "main".to_string(),
+        main_branch_name: DEFAULT_BRANCH_NAME.to_string(),
     };
-    let item = WorktreeListItem::new(&repo, "/a/repo/origin/some-work     f9e08b4 [some-work]".to_string());
+    let item = WorktreeListItem::new(
+        &repo,
+        "/a/repo/origin/some-work     f9e08b4 [some-work]".to_string(),
+    );
 
     assert_eq!(Some("/a/repo/origin/some-work".to_string()), item.path());
 }
@@ -72,7 +90,7 @@ fn test_path_can_have_a_subdirectory() {
 fn test_path_is_none_for_the_root_list_item() {
     let repo = BareRepository {
         root: PathBuf::from("/a/repo with-_ ^symbols"),
-        main_branch_name: "main".to_string(),
+        main_branch_name: DEFAULT_BRANCH_NAME.to_string(),
     };
     let item = WorktreeListItem::new(&repo, "/a/repo with-_ ^symbols    (bare)".to_string());
 
@@ -83,9 +101,12 @@ fn test_path_is_none_for_the_root_list_item() {
 fn test_name_can_include_symbols() {
     let repo = BareRepository {
         root: PathBuf::from("/a/repo"),
-        main_branch_name: "main".to_string(),
+        main_branch_name: DEFAULT_BRANCH_NAME.to_string(),
     };
-    let item = WorktreeListItem::new(&repo, "/a/repo/some-work     f9e08b4 [some-_^wo[rk]]".to_string());
+    let item = WorktreeListItem::new(
+        &repo,
+        "/a/repo/some-work     f9e08b4 [some-_^wo[rk]]".to_string(),
+    );
 
     assert_eq!(Some("some-_^wo[rk]".to_string()), item.name());
 }
@@ -94,9 +115,12 @@ fn test_name_can_include_symbols() {
 fn test_name_can_include_spaces() {
     let repo = BareRepository {
         root: PathBuf::from("/a/repo"),
-        main_branch_name: "main".to_string(),
+        main_branch_name: DEFAULT_BRANCH_NAME.to_string(),
     };
-    let item = WorktreeListItem::new(&repo, "/a/repo/some-work     f9e08b4 [some work]".to_string());
+    let item = WorktreeListItem::new(
+        &repo,
+        "/a/repo/some-work     f9e08b4 [some work]".to_string(),
+    );
 
     assert_eq!(Some("some work".to_string()), item.name());
 }
@@ -105,9 +129,12 @@ fn test_name_can_include_spaces() {
 fn test_name_can_include_forward_slashes() {
     let repo = BareRepository {
         root: PathBuf::from("/a/repo"),
-        main_branch_name: "main".to_string(),
+        main_branch_name: DEFAULT_BRANCH_NAME.to_string(),
     };
-    let item = WorktreeListItem::new(&repo, "/a/repo/some-work     f9e08b4 [some/work]".to_string());
+    let item = WorktreeListItem::new(
+        &repo,
+        "/a/repo/some-work     f9e08b4 [some/work]".to_string(),
+    );
 
     assert_eq!(Some("some/work".to_string()), item.name());
 }
@@ -116,9 +143,12 @@ fn test_name_can_include_forward_slashes() {
 fn test_name_can_include_backslashes() {
     let repo = BareRepository {
         root: PathBuf::from("/a/repo"),
-        main_branch_name: "main".to_string(),
+        main_branch_name: DEFAULT_BRANCH_NAME.to_string(),
     };
-    let item = WorktreeListItem::new(&repo, "/a/repo/some-work     f9e08b4 [some\\work]".to_string());
+    let item = WorktreeListItem::new(
+        &repo,
+        "/a/repo/some-work     f9e08b4 [some\\work]".to_string(),
+    );
 
     assert_eq!(Some("some\\work".to_string()), item.name());
 }
@@ -127,7 +157,7 @@ fn test_name_can_include_backslashes() {
 fn test_name_is_none_for_the_root_list_item() {
     let repo = BareRepository {
         root: PathBuf::from("/a/repo"),
-        main_branch_name: "main".to_string(),
+        main_branch_name: DEFAULT_BRANCH_NAME.to_string(),
     };
     let item = WorktreeListItem::new(&repo, "/a/repo    (bare)".to_string());
 
@@ -138,7 +168,7 @@ fn test_name_is_none_for_the_root_list_item() {
 fn test_is_bare_is_true_for_the_root_list_item() {
     let repo = BareRepository {
         root: PathBuf::from("/a/repo"),
-        main_branch_name: "main".to_string(),
+        main_branch_name: DEFAULT_BRANCH_NAME.to_string(),
     };
     let item = WorktreeListItem::new(&repo, "/a/repo    (bare)".to_string());
 
@@ -149,9 +179,12 @@ fn test_is_bare_is_true_for_the_root_list_item() {
 fn test_is_bare_is_false_for_a_non_root_list_item() {
     let repo = BareRepository {
         root: PathBuf::from("/a/repo"),
-        main_branch_name: "main".to_string(),
+        main_branch_name: DEFAULT_BRANCH_NAME.to_string(),
     };
-    let item = WorktreeListItem::new(&repo, "/a/repo/some-work     f9e08b4 [some-work]".to_string());
+    let item = WorktreeListItem::new(
+        &repo,
+        "/a/repo/some-work     f9e08b4 [some-work]".to_string(),
+    );
 
     assert!(!item.is_bare());
 }
@@ -160,7 +193,7 @@ fn test_is_bare_is_false_for_a_non_root_list_item() {
 fn test_is_detached_is_true_if_list_item_is_detached() {
     let repo = BareRepository {
         root: PathBuf::from("/a/repo"),
-        main_branch_name: "main".to_string(),
+        main_branch_name: DEFAULT_BRANCH_NAME.to_string(),
     };
     let item = WorktreeListItem::new(
         &repo,
@@ -174,9 +207,12 @@ fn test_is_detached_is_true_if_list_item_is_detached() {
 fn test_is_detached_is_false_if_list_item_is_not_detached() {
     let repo = BareRepository {
         root: PathBuf::from("/a/repo"),
-        main_branch_name: "main".to_string(),
+        main_branch_name: DEFAULT_BRANCH_NAME.to_string(),
     };
-    let item = WorktreeListItem::new(&repo, "/a/repo/some-work     f9e08b4 [some-work]".to_string());
+    let item = WorktreeListItem::new(
+        &repo,
+        "/a/repo/some-work     f9e08b4 [some-work]".to_string(),
+    );
 
     assert!(!item.is_detached());
 }
@@ -185,7 +221,7 @@ fn test_is_detached_is_false_if_list_item_is_not_detached() {
 fn test_prunable_worktree_is_parsed_properly() {
     let repo = BareRepository {
         root: PathBuf::from("/a/repo"),
-        main_branch_name: "main".to_string(),
+        main_branch_name: DEFAULT_BRANCH_NAME.to_string(),
     };
     let item = WorktreeListItem::new(
         &repo,

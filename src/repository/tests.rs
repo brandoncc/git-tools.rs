@@ -7,12 +7,17 @@ use std::fs::create_dir;
 #[cfg(test)]
 use std::path::PathBuf;
 
+#[cfg(test)]
 use crate::repository::{all_branch_names, RepositoryInterface};
+
 #[cfg(test)]
 use crate::repository::{BareRepository, NormalRepository};
 
 #[cfg(test)]
 use crate::test_helpers::run_test;
+
+#[cfg(test)]
+use crate::test_setup::DEFAULT_BRANCH_NAME;
 
 #[cfg(test)]
 use crate::test_setup::{BARE_REPO_NAME, CLEAN_NORMAL_REPO_NAME};
@@ -112,7 +117,10 @@ fn test_bare_repository_at_with_subdirectory_has_correct_main_branch_name() {
             let repo2 = BareRepository::at(&path)
                 .unwrap_or_else(|| panic!("{:#?} is not a valid git repository", &path));
 
-            assert_eq!("main", RepositoryInterface::main_branch_name(&repo2));
+            assert_eq!(
+                DEFAULT_BRANCH_NAME,
+                RepositoryInterface::main_branch_name(&repo2)
+            );
         },
     );
 }
@@ -126,7 +134,7 @@ fn test_bare_repository_at_with_root_has_correct_main_branch_name() {
             let repo2 = BareRepository::at(repo.root())
                 .unwrap_or_else(|| panic!("{:#?} is not a valid git repository", repo.root()));
 
-            assert_eq!("main", repo2.main_branch_name);
+            assert_eq!(DEFAULT_BRANCH_NAME, repo2.main_branch_name);
         },
     );
 }
@@ -189,7 +197,7 @@ fn test_normal_repository_at_with_subdirectory_has_correct_main_branch_name() {
             let repo = NormalRepository::at(&path)
                 .unwrap_or_else(|| panic!("{:#?} is not a valid git repository", &path));
 
-            assert_eq!("main", repo.main_branch_name);
+            assert_eq!(DEFAULT_BRANCH_NAME, repo.main_branch_name);
         },
     );
 }
@@ -203,7 +211,7 @@ fn test_normal_repository_at_with_root_has_correct_main_branch_name() {
             let repo = NormalRepository::at(repo.root())
                 .unwrap_or_else(|| panic!("{:#?} is not a valid git repository", &repo.root()));
 
-            assert_eq!("main", repo.main_branch_name);
+            assert_eq!(DEFAULT_BRANCH_NAME, repo.main_branch_name);
         },
     );
 }
@@ -234,7 +242,7 @@ fn test_all_branch_names_returns_correct_list() {
             let names = all_branch_names(repo.root());
             println!("names: {:?}", names);
 
-            assert_eq!(vec!["main", "merged", "unmerged"], names);
+            assert_eq!(vec![DEFAULT_BRANCH_NAME, "merged", "unmerged"], names);
         },
     );
 }

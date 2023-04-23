@@ -75,3 +75,9 @@ pub fn run_test(test_name: &str, repo_directory: &str, test: fn(Box<dyn Reposito
     test(repository);
     run_teardown(test_name);
 }
+
+pub fn as_bare_repo(repo: &Box<dyn RepositoryInterface>) -> &BareRepository {
+    repo.as_any()
+        .downcast_ref::<BareRepository>()
+        .expect("Should have been a BareRepository, but wasn't")
+}
