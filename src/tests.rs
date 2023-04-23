@@ -1,7 +1,6 @@
 use crate::{
-    commands::git_command,
-    repository::{BareRepository, RepositoryInterface},
-    worktree::Worktree,
+    commands::git_command, repository::RepositoryInterface, test_helpers::as_bare_repo,
+    test_setup::DEFAULT_BRANCH_NAME, worktree::Worktree,
 };
 
 use self::test_helpers::run_test;
@@ -20,7 +19,7 @@ fn test_merged_branches_are_not_deleted_if_working_tree_is_not_clean() {
             test_helpers::assert_branches(
                 &repo,
                 vec![
-                    "main".to_string(),
+                    DEFAULT_BRANCH_NAME.to_string(),
                     "merged".to_string(),
                     "unmerged".to_string(),
                 ],
@@ -73,7 +72,7 @@ fn test_deleting_current_head_branch_leaves_repo_with_main_branch_checked_out() 
             repo.clean_merged()
                 .expect("failed to clean merged branches");
 
-            test_helpers::assert_current_branch(&repo, "main".to_string());
+            test_helpers::assert_current_branch(&repo, DEFAULT_BRANCH_NAME.to_string());
         },
     );
 }
@@ -103,10 +102,7 @@ fn test_dirty_worktrees_are_not_removed() {
         "test_dirty_worktrees_are_not_removed",
         test_setup::BARE_REPO_NAME,
         |repo| {
-            let bare_repo = repo
-                .as_any()
-                .downcast_ref::<BareRepository>()
-                .expect("Should have been a BareRepository, but wasn't");
+            let bare_repo = as_bare_repo(&repo);
             RepositoryInterface::clean_merged(bare_repo).expect("failed to clean merged worktrees");
 
             test_helpers::assert_worktree_exists(bare_repo, "dirty".to_string());
@@ -120,10 +116,7 @@ fn test_unmerged_worktrees_are_not_removed() {
         "test_unmerged_worktrees_are_not_removed",
         test_setup::BARE_REPO_NAME,
         |repo| {
-            let bare_repo = repo
-                .as_any()
-                .downcast_ref::<BareRepository>()
-                .expect("Should have been a BareRepository, but wasn't");
+            let bare_repo = as_bare_repo(&repo);
             RepositoryInterface::clean_merged(bare_repo).expect("failed to clean merged worktrees");
 
             test_helpers::assert_worktree_exists(bare_repo, "unmerged".to_string());
@@ -137,10 +130,7 @@ fn test_merged_worktrees_are_removed() {
         "test_merged_worktrees_are_removed",
         test_setup::BARE_REPO_NAME,
         |repo| {
-            let bare_repo = repo
-                .as_any()
-                .downcast_ref::<BareRepository>()
-                .expect("Should have been a BareRepository, but wasn't");
+            let bare_repo = as_bare_repo(&repo);
             RepositoryInterface::clean_merged(bare_repo).expect("failed to clean merged worktrees");
 
             test_helpers::assert_worktree_does_not_exist(bare_repo, "merged".to_string());
@@ -156,10 +146,7 @@ fn test_branches_are_removed_for_worktrees_that_are_removed() {
         |repo| {
             test_helpers::assert_branch_exists(&repo, "merged".to_string());
 
-            let bare_repo = repo
-                .as_any()
-                .downcast_ref::<BareRepository>()
-                .expect("Should have been a BareRepository, but wasn't");
+            let bare_repo = as_bare_repo(&repo);
             RepositoryInterface::clean_merged(bare_repo).expect("failed to clean merged worktrees");
 
             test_helpers::assert_branch_does_not_exist(&repo, "merged".to_string());
@@ -173,10 +160,7 @@ fn test_branches_are_removed_for_worktrees_that_are_removed_when_path_doesnt_mat
         "test_branches_are_removed_for_worktrees_that_are_removed_when_path_doesnt_match_worktree",
         test_setup::BARE_REPO_NAME,
         |repo| {
-            let bare_repo = repo
-                .as_any()
-                .downcast_ref::<BareRepository>()
-                .expect("Should have been a BareRepository, but wasn't");
+            let bare_repo = as_bare_repo(&repo);
 
             test_helpers::assert_worktree_exists(bare_repo, "wont-match-path".to_string());
             test_helpers::assert_branch_exists(&repo, "wont-match-path".to_string());
@@ -195,13 +179,10 @@ fn test_main_worktree_is_not_removed() {
         "test_main_worktree_is_not_removed",
         test_setup::BARE_REPO_NAME,
         |repo| {
-            let bare_repo = repo
-                .as_any()
-                .downcast_ref::<BareRepository>()
-                .expect("Should have been a BareRepository, but wasn't");
+            let bare_repo = as_bare_repo(&repo);
             RepositoryInterface::clean_merged(bare_repo).expect("failed to clean merged worktrees");
 
-            test_helpers::assert_worktree_exists(bare_repo, "main".to_string());
+            test_helpers::assert_worktree_exists(bare_repo, DEFAULT_BRANCH_NAME.to_string());
         },
     );
 }
@@ -212,42 +193,42 @@ fn test_worktree_list_is_parsed_correctly() {
         "test_worktree_list_is_parsed_correctly",
         test_setup::BARE_REPO_NAME,
         |repo| {
-            let bare_repo = repo
-                .as_any()
-                .downcast_ref::<BareRepository>()
-                .expect("repo isn't a BareRepository, but it should be");
+            let bare_repo = as_bare_repo(&repo);
             let worktrees = bare_repo
                 .all_worktrees()
                 .expect("Couldn't get all worktrees");
+            let library_dir =
+                env::current_dir().unwrap_or_else(|_| panic!("Couldn't get library directory"));
+
             let expected = vec![
                 Worktree {
                     name: "dirty".to_string(),
-                    path: "/Users/brandoncc/dev/git-tools/dummy_repos/test_worktree_list_is_parsed_correctly/bare repo  -_^^ with symbols and spaces/dirty".to_string(),
+                    path: format!("{}/dummy_repos/test_worktree_list_is_parsed_correctly/bare repo  -_^^ with symbols and spaces/dirty", library_dir.to_str().unwrap()),
                     repository: bare_repo,
                 },
                 Worktree {
-                    name: "main".to_string(),
-                    path: "/Users/brandoncc/dev/git-tools/dummy_repos/test_worktree_list_is_parsed_correctly/bare repo  -_^^ with symbols and spaces/main".to_string(),
+                    name: DEFAULT_BRANCH_NAME.to_string(),
+                    path: format!("{}/dummy_repos/test_worktree_list_is_parsed_correctly/bare repo  -_^^ with symbols and spaces/main", library_dir.to_str().unwrap()),
                     repository: bare_repo,
                 },
                 Worktree {
                     name: "merged".to_string(),
-                    path: "/Users/brandoncc/dev/git-tools/dummy_repos/test_worktree_list_is_parsed_correctly/bare repo  -_^^ with symbols and spaces/merged".to_string(),
+                    path: format!("{}/dummy_repos/test_worktree_list_is_parsed_correctly/bare repo  -_^^ with symbols and spaces/merged", library_dir.to_str().unwrap()),
                     repository: bare_repo,
                 },
                 Worktree {
                     name: "wont-match-path".to_string(),
-                    path: "/Users/brandoncc/dev/git-tools/dummy_repos/test_worktree_list_is_parsed_correctly/bare repo  -_^^ with symbols and spaces/origin/doesnt-match-name".to_string(),
+                    path: format!("{}/dummy_repos/test_worktree_list_is_parsed_correctly/bare repo  -_^^ with symbols and spaces/origin/doesnt-match-name", library_dir.to_str().unwrap()),
                     repository: bare_repo,
                 },
                 Worktree {
                     name: "other-branch".to_string(),
-                    path: "/Users/brandoncc/dev/git-tools/dummy_repos/test_worktree_list_is_parsed_correctly/bare repo  -_^^ with symbols and spaces/origin/other-branch".to_string(),
+                    path: format!("{}/dummy_repos/test_worktree_list_is_parsed_correctly/bare repo  -_^^ with symbols and spaces/origin/other-branch", library_dir.to_str().unwrap()),
                     repository: bare_repo,
                 },
                 Worktree {
                     name: "unmerged".to_string(),
-                    path: "/Users/brandoncc/dev/git-tools/dummy_repos/test_worktree_list_is_parsed_correctly/bare repo  -_^^ with symbols and spaces/unmerged".to_string(),
+                    path: format!("{}/dummy_repos/test_worktree_list_is_parsed_correctly/bare repo  -_^^ with symbols and spaces/unmerged", library_dir.to_str().unwrap()),
                     repository: bare_repo,
                 },
             ];
