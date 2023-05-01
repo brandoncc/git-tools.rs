@@ -36,7 +36,7 @@ pub trait RepositoryInterface {
     fn main_branch_name(&self) -> &String;
 }
 
-impl<'a> RepositoryInterface for BareRepository {
+impl RepositoryInterface for BareRepository {
     fn clean_merged(&self) -> Result<(), String> {
         let worktrees = self
             .merged_worktrees()
