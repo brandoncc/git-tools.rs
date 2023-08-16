@@ -1,4 +1,7 @@
-use std::{process::Command, path::{PathBuf, Path}};
+use std::{
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 pub struct CommandConfiguration<'a> {
     cmd: &'a str,
@@ -56,15 +59,16 @@ pub fn run_command(config: CommandConfiguration) -> CommandExecutionResult {
         output.unwrap_or_else(|_| panic!("process {:?} failed to execute", command.get_program()));
     let exit_code = result.status.code().unwrap_or(-1);
 
-    let stdout = String::from_utf8(result.stdout).unwrap_or_default();
-    let items = remove_empty_string_elements(stdout.split('\n').collect::<Vec<&str>>());
-
     if result.status.success() {
+        let stdout = String::from_utf8(result.stdout).unwrap_or_default();
+        let items = remove_empty_string_elements(stdout.split('\n').collect::<Vec<&str>>());
         Ok(SuccessfulCommandExecution {
             exit_code,
             output: items,
         })
     } else {
+        let stderr = String::from_utf8(result.stderr).unwrap_or_default();
+        let items = remove_empty_string_elements(stderr.split('\n').collect::<Vec<&str>>());
         Err(FailedCommandExecution {
             exit_code,
             output: items,

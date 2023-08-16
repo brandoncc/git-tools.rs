@@ -96,8 +96,8 @@ impl RepositoryInterface for NormalRepository {
         });
 
         for branch in branches {
-            git_command(vec!["branch", "-d", branch.as_str()], &self.root).unwrap_or_else(|_| {
-                panic!("An error occurred while deleting the '{}' branch", branch)
+            git_command(vec!["branch", "-d", branch.as_str()], &self.root).unwrap_or_else(|m| {
+                panic!("An error occurred while deleting the '{}' branch\n\n{}", branch, m.output.join("\n"))
             });
 
             if branch == current_branch {
