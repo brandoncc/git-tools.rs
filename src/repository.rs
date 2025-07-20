@@ -28,52 +28,38 @@ pub struct NormalRepository {
     root: PathBuf,
 }
 
-pub trait RepositoryInterface {
-    fn clean_merged(&self) -> Result<(), String>;
-    fn is_bare(&self) -> bool;
-    fn root(&self) -> &PathBuf;
-    fn main_branch_name(&self) -> &String;
-}
-
-impl RepositoryInterface for Repository {
-    fn clean_merged(&self) -> Result<(), String> {
-        match self {
-            Repository::Normal(normal) => normal.clean_merged(),
-            Repository::Bare(bare) => bare.clean_merged(),
+impl BareRepository {
+    #[cfg(test)]
+    pub fn new(main_branch_name: String, root: PathBuf) -> Self {
+        Self {
+            main_branch_name,
+            root,
         }
     }
 
-    fn is_bare(&self) -> bool {
-        match self {
-            Repository::Normal(normal) => normal.is_bare(),
-            Repository::Bare(bare) => bare.is_bare(),
+    pub fn at(path: &Path) -> Option<Self> {
+        if !path.exists() {
+            return None;
         }
+
+        if !is_repo(path) {
+            return None;
+        }
+
+        Some(Self {
+            main_branch_name: find_main_branch_name(path),
+            root: get_bare_root(path).expect("Expected to find a bare repo root, but didn't"),
+        })
     }
 
-    fn root(&self) -> &PathBuf {
-        match self {
-            Repository::Normal(normal) => normal.root(),
-            Repository::Bare(bare) => bare.root(),
-        }
-    }
-
-    fn main_branch_name(&self) -> &String {
-        match self {
-            Repository::Normal(normal) => normal.main_branch_name(),
-            Repository::Bare(bare) => bare.main_branch_name(),
-        }
-    }
-}
-
-impl RepositoryInterface for BareRepository {
-    fn clean_merged(&self) -> Result<(), String> {
+    fn clean_merged_impl(&self) -> Result<(), String> {
         let worktrees = self
             .merged_worktrees()
             .expect("Couldn't get the list of merged worktrees");
 
         for worktree in worktrees {
             if worktree.is_clean() {
-                if &worktree.name != self.main_branch_name() {
+                if worktree.name != self.main_branch_name {
                     match worktree.delete() {
                         Ok(_) => println!("Deleted worktree: {}", worktree.path),
                         Err(msg) => println!(
@@ -93,21 +79,65 @@ impl RepositoryInterface for BareRepository {
         Ok(())
     }
 
-    fn is_bare(&self) -> bool {
-        true
+    pub fn all_worktrees(&self) -> Result<Vec<Worktree>, String> {
+        let worktrees = git_command(vec!["worktree", "list"], &self.root)
+            .expect("Couldn't get worktree names")
+            .output
+            .into_iter()
+            .map(|line| WorktreeListItem::new(self, line))
+            .filter_map(
+                |list_item| match list_item.is_bare() || list_item.is_detached() {
+                    true => None,
+                    false => Some(
+                        Worktree::try_from(list_item)
+                            .expect("Couldn't create Worktree from WorktreeListItem"),
+                    ),
+                },
+            )
+            .collect::<Vec<Worktree>>();
+
+        Ok(worktrees)
     }
 
-    fn root(&self) -> &PathBuf {
-        &self.root
+    fn merged_worktrees(&self) -> Result<Vec<Worktree>, String> {
+        let merged = merged_branches(&self.main_branch_name, &self.root)
+            .expect("Couldn't get merged branches");
+        let all = self.all_worktrees().expect("Couldn't get all worktrees");
+        let not_merged = all
+            .into_iter()
+            .filter(|w| merged.contains(&w.name))
+            .collect::<Vec<Worktree>>();
+
+        Ok(not_merged)
     }
 
-    fn main_branch_name(&self) -> &String {
+    #[cfg(test)]
+    pub fn main_branch_name(&self) -> &String {
         &self.main_branch_name
+    }
+
+    pub fn root(&self) -> &PathBuf {
+        &self.root
     }
 }
 
-impl RepositoryInterface for NormalRepository {
-    fn clean_merged(&self) -> Result<(), String> {
+impl NormalRepository {
+    pub fn at(path: &Path) -> Option<Self> {
+        if !path.exists() {
+            return None;
+        }
+
+        if !is_repo(path) {
+            return None;
+        }
+
+        Some(Self {
+            main_branch_name: find_main_branch_name(path),
+            root: get_normal_root(path).expect("Expected to find a repo root, but didn't"),
+        })
+    }
+
+    fn clean_merged_impl(&self) -> Result<(), String> {
         self.validate_cleanliness()?;
 
         let branches = merged_branches(&self.main_branch_name, &self.root)
@@ -148,100 +178,6 @@ impl RepositoryInterface for NormalRepository {
         }
 
         Ok(())
-    }
-
-    fn is_bare(&self) -> bool {
-        false
-    }
-
-    fn root(&self) -> &PathBuf {
-        &self.root
-    }
-
-    fn main_branch_name(&self) -> &String {
-        &self.main_branch_name
-    }
-}
-
-impl BareRepository {
-    #[cfg(test)]
-    pub fn new(main_branch_name: String, root: PathBuf) -> Self {
-        Self {
-            main_branch_name,
-            root,
-        }
-    }
-
-    pub fn at(path: &Path) -> Option<Self> {
-        if !path.exists() {
-            return None;
-        }
-
-        if !is_repo(path) {
-            return None;
-        }
-
-        Some(Self {
-            main_branch_name: find_main_branch_name(path),
-            root: get_bare_root(path).expect("Expected to find a bare repo root, but didn't"),
-        })
-    }
-
-    pub fn all_worktrees(&self) -> Result<Vec<Worktree>, String> {
-        let worktrees = git_command(vec!["worktree", "list"], &self.root)
-            .expect("Couldn't get worktree names")
-            .output
-            .into_iter()
-            .map(|line| WorktreeListItem::new(self, line))
-            .filter_map(
-                |list_item| match list_item.is_bare() || list_item.is_detached() {
-                    true => None,
-                    false => Some(
-                        Worktree::try_from(list_item)
-                            .expect("Couldn't create Worktree from WorktreeListItem"),
-                    ),
-                },
-            )
-            .collect::<Vec<Worktree>>();
-
-        Ok(worktrees)
-    }
-
-    fn merged_worktrees(&self) -> Result<Vec<Worktree>, String> {
-        let merged = merged_branches(&self.main_branch_name, &self.root)
-            .expect("Couldn't get merged branches");
-        let all = self.all_worktrees().expect("Couldn't get all worktrees");
-        let not_merged = all
-            .into_iter()
-            .filter(|w| merged.contains(&w.name))
-            .collect::<Vec<Worktree>>();
-
-        Ok(not_merged)
-    }
-}
-
-impl NormalRepository {
-    #[cfg(test)]
-    pub fn new(main_branch_name: String, root: PathBuf) -> Self {
-        Self {
-            main_branch_name,
-            root,
-        }
-    }
-
-    pub fn at(path: &Path) -> Option<Self> {
-        if !path.exists() {
-            return None;
-        }
-
-        if !is_repo(path) {
-            return None;
-        }
-
-        Some(Self {
-            main_branch_name: find_main_branch_name(path),
-            root: get_normal_root(path).expect("Expected to find a repo root, but didn't"),
-        })
     }
 
     fn validate_cleanliness(&self) -> Result<bool, String> {
@@ -290,6 +226,21 @@ impl Repository {
         }
 
         Some(repo)
+    }
+
+    pub fn clean_merged(&self) -> Result<(), String> {
+        match self {
+            Repository::Normal(normal) => normal.clean_merged_impl(),
+            Repository::Bare(bare) => bare.clean_merged_impl(),
+        }
+    }
+
+    #[cfg(test)]
+    pub fn root(&self) -> &PathBuf {
+        match self {
+            Repository::Normal(normal) => &normal.root,
+            Repository::Bare(bare) => &bare.root,
+        }
     }
 }
 
