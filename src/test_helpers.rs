@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use crate::{
     get_cwd,
-    repository::{all_branch_names, BareRepository, Repository, RepositoryInterface},
+    repository::{all_branch_names, Repository},
     test_setup::{setup, teardown, BARE_REPO_NAME, DUMMY_REPOS_DIRECTORY},
     utils::get_current_branch_name,
 };
@@ -19,12 +19,8 @@ pub fn assert_branch_does_not_exist(repo: &Repository, branch: String) {
     assert!(!all_branch_names(repo.root()).contains(&branch));
 }
 
-pub fn assert_worktree_does_not_exist(repo: &BareRepository, worktree_name: String) {
-    let worktrees = repo
-        .all_worktrees()
-        .expect("Couldn't get list of worktrees");
-
-    assert!(!worktrees.iter().any(|w| w.name == worktree_name));
+pub fn assert_worktree_does_not_exist(repo: &Repository, worktree_name: String) {
+    assert!(!worktree_exists(repo, worktree_name))
 }
 
 pub fn assert_current_branch(repo: &Repository, branch: String) {
@@ -33,12 +29,8 @@ pub fn assert_current_branch(repo: &Repository, branch: String) {
     assert_eq!(branch, current_branch);
 }
 
-pub fn assert_worktree_exists(repo: &BareRepository, worktree_name: String) {
-    let worktrees = repo
-        .all_worktrees()
-        .expect("Couldn't get list of worktrees");
-
-    assert!(worktrees.iter().any(|w| w.name == worktree_name));
+pub fn assert_worktree_exists(repo: &Repository, worktree_name: String) {
+    assert!(worktree_exists(repo, worktree_name))
 }
 
 pub fn run_setup(test_name: &str, bare_repo: bool) {
@@ -76,11 +68,17 @@ pub fn run_test(test_name: &str, repo_directory: &str, test: fn(Repository)) {
     run_teardown(test_name);
 }
 
-pub fn as_bare_repo(repo: &Repository) -> &BareRepository {
-    let coerced = match repo {
-        Repository::Bare(bare) => Some(bare),
-        _ => None,
-    };
+fn worktree_exists(repo: &Repository, worktree_name: String) -> bool {
+    match repo {
+        Repository::Bare(repo) => {
+            let worktrees = repo
+                .all_worktrees()
+                .expect("Couldn't get list of worktrees");
 
-    coerced.expect("Should have been a BareRepository, but wasn't")
+            worktrees.iter().any(|w| w.name == worktree_name)
+        }
+        _ => {
+            panic!("repo is not a bare repo")
+        }
+    }
 }

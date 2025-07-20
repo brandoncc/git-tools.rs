@@ -1,7 +1,5 @@
 use crate::{
-    commands::git_command,
-    repository::{BareRepository, RepositoryInterface},
-    worktree_list_item::WorktreeListItem,
+    commands::git_command, repository::BareRepository, worktree_list_item::WorktreeListItem,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -35,16 +33,13 @@ impl<'a> Worktree<'a> {
     pub fn delete(&self) -> Result<(), String> {
         match git_command(
             vec!["worktree", "remove", &self.path],
-            RepositoryInterface::root(self.repository),
+            self.repository.root(),
         ) {
             Ok(_) => Ok(()),
             Err(result) => Err(result.output.join(",")),
         }?;
 
-        match git_command(
-            vec!["branch", "-d", &self.name],
-            RepositoryInterface::root(self.repository),
-        ) {
+        match git_command(vec!["branch", "-d", &self.name], self.repository.root()) {
             Ok(_) => Ok(()),
             Err(result) => Err(result.output.join(",")),
         }
@@ -53,7 +48,7 @@ impl<'a> Worktree<'a> {
     pub fn is_clean(&self) -> bool {
         let result = git_command(
             vec!["status", "--short"],
-            &RepositoryInterface::root(self.repository).join(&self.path),
+            &self.repository.root().join(&self.path),
         );
 
         match result {

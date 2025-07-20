@@ -8,7 +8,7 @@ use std::fs::create_dir;
 use std::path::PathBuf;
 
 #[cfg(test)]
-use crate::repository::{all_branch_names, RepositoryInterface};
+use crate::repository::all_branch_names;
 
 #[cfg(test)]
 use crate::repository::{BareRepository, NormalRepository};
@@ -31,7 +31,7 @@ fn test_repository_at_returns_a_bare_repository_for_the_bare_root_path() {
         "test_repository_at_returns_a_bare_repository_for_the_bare_root_path",
         BARE_REPO_NAME,
         |repo| match Repository::at(repo.root()) {
-            Some(r) => assert!(r.is_bare()),
+            Some(r) => assert!(matches!(r, Repository::Bare(_))),
             _ => panic!("Should have returned a BareRepository, but didn't"),
         },
     );
@@ -43,7 +43,7 @@ fn test_repository_at_returns_a_bare_repository_for_a_valid_repo_subdirectory_pa
         "test_repository_at_returns_a_bare_repository_for_a_valid_repo_subdirectory_path",
         BARE_REPO_NAME,
         |repo| match Repository::at(&repo.root().join("merged")) {
-            Some(r) => assert!(r.is_bare()),
+            Some(r) => assert!(matches!(r, Repository::Bare(_))),
             _ => panic!("Should have returned a BareRepository, but didn't"),
         },
     );
@@ -55,7 +55,7 @@ fn test_repository_at_returns_a_normal_repository() {
         "test_repository_at_returns_a_normal_repository",
         CLEAN_NORMAL_REPO_NAME,
         |repo| match Repository::at(repo.root()) {
-            Some(r) => assert!(!r.is_bare()),
+            Some(r) => assert!(!matches!(r, Repository::Bare(_))),
             _ => panic!("Should have returned a BareRepository, but didn't"),
         },
     );
@@ -117,10 +117,7 @@ fn test_bare_repository_at_with_subdirectory_has_correct_main_branch_name() {
             let repo2 = BareRepository::at(&path)
                 .unwrap_or_else(|| panic!("{:#?} is not a valid git repository", &path));
 
-            assert_eq!(
-                DEFAULT_BRANCH_NAME,
-                RepositoryInterface::main_branch_name(&repo2)
-            );
+            assert_eq!(DEFAULT_BRANCH_NAME, repo2.main_branch_name());
         },
     );
 }
