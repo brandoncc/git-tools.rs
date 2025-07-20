@@ -11,13 +11,11 @@ pub struct CommandConfiguration<'a> {
 
 #[derive(Debug)]
 pub struct SuccessfulCommandExecution {
-    pub exit_code: i32,
     pub output: Vec<String>,
 }
 
 #[derive(Debug)]
 pub struct FailedCommandExecution {
-    pub exit_code: i32,
     pub output: Vec<String>,
 }
 
@@ -57,22 +55,15 @@ pub fn run_command(config: CommandConfiguration) -> CommandExecutionResult {
 
     let result =
         output.unwrap_or_else(|_| panic!("process {:?} failed to execute", command.get_program()));
-    let exit_code = result.status.code().unwrap_or(-1);
 
     if result.status.success() {
         let stdout = String::from_utf8(result.stdout).unwrap_or_default();
         let items = remove_empty_string_elements(stdout.split('\n').collect::<Vec<&str>>());
-        Ok(SuccessfulCommandExecution {
-            exit_code,
-            output: items,
-        })
+        Ok(SuccessfulCommandExecution { output: items })
     } else {
         let stderr = String::from_utf8(result.stderr).unwrap_or_default();
         let items = remove_empty_string_elements(stderr.split('\n').collect::<Vec<&str>>());
-        Err(FailedCommandExecution {
-            exit_code,
-            output: items,
-        })
+        Err(FailedCommandExecution { output: items })
     }
 }
 

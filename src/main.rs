@@ -1,6 +1,6 @@
 use std::{env, path::PathBuf, process::exit};
 
-use crate::utils::expand_path;
+use crate::{repository::RepositoryInterface, utils::expand_path};
 
 mod commands;
 mod repository;

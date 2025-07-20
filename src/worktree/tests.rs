@@ -12,10 +12,7 @@ use crate::worktree::WorktreeListItem;
 
 #[test]
 fn test_worktree_can_be_created_from_a_worktree_list_item() {
-    let repo = BareRepository {
-        root: PathBuf::from("/a/repo"),
-        main_branch_name: DEFAULT_BRANCH_NAME.to_string(),
-    };
+    let repo = BareRepository::new(DEFAULT_BRANCH_NAME.to_string(), PathBuf::from("/a/repo"));
     let item = WorktreeListItem::new(
         &repo,
         "/a/repo/origin/some-work     f9e08b4 [some-work]".to_string(),
@@ -28,20 +25,14 @@ fn test_worktree_can_be_created_from_a_worktree_list_item() {
 
 #[test]
 fn test_worktree_cannot_be_created_from_a_bare_worktree_list_item() {
-    let repo = BareRepository {
-        root: PathBuf::from("/a/repo"),
-        main_branch_name: DEFAULT_BRANCH_NAME.to_string(),
-    };
+    let repo = BareRepository::new(DEFAULT_BRANCH_NAME.to_string(), PathBuf::from("/a/repo"));
     let item = super::WorktreeListItem::new(&repo, "/a/repo  (bare)".to_string());
     super::Worktree::try_from(item).expect_err("Shouldn't have created a worktree, but did");
 }
 
 #[test]
 fn test_worktree_cannot_be_created_from_a_detached_worktree_list_item() {
-    let repo = BareRepository {
-        root: PathBuf::from("/a/repo"),
-        main_branch_name: DEFAULT_BRANCH_NAME.to_string(),
-    };
+    let repo = BareRepository::new(DEFAULT_BRANCH_NAME.to_string(), PathBuf::from("/a/repo"));
     let item = super::WorktreeListItem::new(&repo, "/a/repo  (detached HEAD)".to_string());
     super::Worktree::try_from(item).expect_err("Shouldn't have created a worktree, but did");
 }
