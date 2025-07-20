@@ -7,15 +7,15 @@ use crate::{
     utils::get_current_branch_name,
 };
 
-pub fn assert_branches(repo: &Box<dyn RepositoryInterface>, branches: Vec<String>) {
+pub fn assert_branches(repo: &Repository, branches: Vec<String>) {
     assert_eq!(all_branch_names(repo.root()), branches);
 }
 
-pub fn assert_branch_exists(repo: &Box<dyn RepositoryInterface>, branch: String) {
+pub fn assert_branch_exists(repo: &Repository, branch: String) {
     assert!(all_branch_names(repo.root()).contains(&branch));
 }
 
-pub fn assert_branch_does_not_exist(repo: &Box<dyn RepositoryInterface>, branch: String) {
+pub fn assert_branch_does_not_exist(repo: &Repository, branch: String) {
     assert!(!all_branch_names(repo.root()).contains(&branch));
 }
 
@@ -27,7 +27,7 @@ pub fn assert_worktree_does_not_exist(repo: &BareRepository, worktree_name: Stri
     assert!(!worktrees.iter().any(|w| w.name == worktree_name));
 }
 
-pub fn assert_current_branch(repo: &Box<dyn RepositoryInterface>, branch: String) {
+pub fn assert_current_branch(repo: &Repository, branch: String) {
     let current_branch = get_current_branch_name(repo.root());
 
     assert_eq!(branch, current_branch);
@@ -59,7 +59,7 @@ pub fn run_teardown(test_name: &str) {
     }
 }
 
-pub fn run_test(test_name: &str, repo_directory: &str, test: fn(Box<dyn RepositoryInterface>)) {
+pub fn run_test(test_name: &str, repo_directory: &str, test: fn(Repository)) {
     // setup must be run before we create the Repository struct or else the repo doesn't exist
     run_setup(test_name, repo_directory == BARE_REPO_NAME);
 
@@ -76,8 +76,11 @@ pub fn run_test(test_name: &str, repo_directory: &str, test: fn(Box<dyn Reposito
     run_teardown(test_name);
 }
 
-pub fn as_bare_repo(repo: &Box<dyn RepositoryInterface>) -> &BareRepository {
-    repo.as_any()
-        .downcast_ref::<BareRepository>()
-        .expect("Should have been a BareRepository, but wasn't")
+pub fn as_bare_repo(repo: &Repository) -> &BareRepository {
+    let coerced = match repo {
+        Repository::Bare(bare) => Some(bare),
+        _ => None,
+    };
+
+    coerced.expect("Should have been a BareRepository, but wasn't")
 }

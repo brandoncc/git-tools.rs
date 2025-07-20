@@ -1,7 +1,4 @@
-use std::{
-    any::Any,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
 use crate::{
     commands::git_command,
@@ -15,25 +12,57 @@ mod tests;
 
 const MAIN_BRANCH_NAMES: [&str; 2] = ["main", "master"];
 
-pub struct Repository;
+pub enum Repository {
+    Bare(BareRepository),
+    Normal(NormalRepository),
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BareRepository {
-    pub main_branch_name: String,
-    pub root: PathBuf,
+    main_branch_name: String,
+    root: PathBuf,
 }
 
-struct NormalRepository {
+pub struct NormalRepository {
     main_branch_name: String,
     root: PathBuf,
 }
 
 pub trait RepositoryInterface {
-    fn as_any(&self) -> &dyn Any;
     fn clean_merged(&self) -> Result<(), String>;
     fn is_bare(&self) -> bool;
     fn root(&self) -> &PathBuf;
     fn main_branch_name(&self) -> &String;
+}
+
+impl RepositoryInterface for Repository {
+    fn clean_merged(&self) -> Result<(), String> {
+        match self {
+            Repository::Normal(normal) => normal.clean_merged(),
+            Repository::Bare(bare) => bare.clean_merged(),
+        }
+    }
+
+    fn is_bare(&self) -> bool {
+        match self {
+            Repository::Normal(normal) => normal.is_bare(),
+            Repository::Bare(bare) => bare.is_bare(),
+        }
+    }
+
+    fn root(&self) -> &PathBuf {
+        match self {
+            Repository::Normal(normal) => normal.root(),
+            Repository::Bare(bare) => bare.root(),
+        }
+    }
+
+    fn main_branch_name(&self) -> &String {
+        match self {
+            Repository::Normal(normal) => normal.main_branch_name(),
+            Repository::Bare(bare) => bare.main_branch_name(),
+        }
+    }
 }
 
 impl RepositoryInterface for BareRepository {
@@ -44,7 +73,7 @@ impl RepositoryInterface for BareRepository {
 
         for worktree in worktrees {
             if worktree.is_clean() {
-                if worktree.name != self.main_branch_name {
+                if &worktree.name != self.main_branch_name() {
                     match worktree.delete() {
                         Ok(_) => println!("Deleted worktree: {}", worktree.path),
                         Err(msg) => println!(
@@ -75,10 +104,6 @@ impl RepositoryInterface for BareRepository {
     fn main_branch_name(&self) -> &String {
         &self.main_branch_name
     }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
 }
 
 impl RepositoryInterface for NormalRepository {
@@ -97,7 +122,11 @@ impl RepositoryInterface for NormalRepository {
 
         for branch in branches {
             git_command(vec!["branch", "-d", branch.as_str()], &self.root).unwrap_or_else(|m| {
-                panic!("An error occurred while deleting the '{}' branch\n\n{}", branch, m.output.join("\n"))
+                panic!(
+                    "An error occurred while deleting the '{}' branch\n\n{}",
+                    branch,
+                    m.output.join("\n")
+                )
             });
 
             if branch == current_branch {
@@ -132,13 +161,17 @@ impl RepositoryInterface for NormalRepository {
     fn main_branch_name(&self) -> &String {
         &self.main_branch_name
     }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
 }
 
 impl BareRepository {
+    #[cfg(test)]
+    pub fn new(main_branch_name: String, root: PathBuf) -> Self {
+        Self {
+            main_branch_name,
+            root,
+        }
+    }
+
     pub fn at(path: &Path) -> Option<Self> {
         if !path.exists() {
             return None;
@@ -188,6 +221,14 @@ impl BareRepository {
 }
 
 impl NormalRepository {
+    #[cfg(test)]
+    pub fn new(main_branch_name: String, root: PathBuf) -> Self {
+        Self {
+            main_branch_name,
+            root,
+        }
+    }
+
     pub fn at(path: &Path) -> Option<Self> {
         if !path.exists() {
             return None;
@@ -225,7 +266,7 @@ impl NormalRepository {
 }
 
 impl Repository {
-    pub fn at(path: &PathBuf) -> Option<Box<dyn RepositoryInterface>> {
+    pub fn at(path: &PathBuf) -> Option<Repository> {
         if !path.exists() {
             return None;
         }
@@ -234,14 +275,21 @@ impl Repository {
             return None;
         }
 
-        match is_bare_repo(path) {
-            true => Some(Box::new(BareRepository::at(path).unwrap_or_else(|| {
-                panic!("{:#?} is not a valid git repository", path)
-            }))),
-            false => Some(Box::new(NormalRepository::at(path).unwrap_or_else(|| {
-                panic!("{:#?} is not a valid git repository", path)
-            }))),
+        let repo: Repository;
+
+        if is_bare_repo(path) {
+            repo = Repository::Bare(
+                BareRepository::at(path)
+                    .unwrap_or_else(|| panic!("{:#?} is not a valid git repository", path)),
+            );
+        } else {
+            repo = Repository::Normal(
+                NormalRepository::at(path)
+                    .unwrap_or_else(|| panic!("{:#?} is not a valid git repository", path)),
+            );
         }
+
+        Some(repo)
     }
 }
 

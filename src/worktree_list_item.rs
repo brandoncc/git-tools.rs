@@ -25,8 +25,12 @@ impl<'a> WorktreeListItem<'a> {
         let worktree_path = path_portion.trim();
         let absolute_path = worktree_path
             .rsplit_once(' ')
-            .unwrap_or_else(|| panic!("Couldn't split on a space, does a space exist? (string: '{}')",
-                    worktree_path))
+            .unwrap_or_else(|| {
+                panic!(
+                    "Couldn't split on a space, does a space exist? (string: '{}')",
+                    worktree_path
+                )
+            })
             .0
             .trim();
 

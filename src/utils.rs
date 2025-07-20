@@ -1,4 +1,7 @@
-use std::{env, path::{PathBuf, Path}};
+use std::{
+    env,
+    path::{Path, PathBuf},
+};
 
 use crate::commands::git_command;
 
@@ -15,7 +18,8 @@ pub fn expand_path(path: String) -> String {
 pub fn get_current_branch_name(repo_path: &Path) -> String {
     git_command(vec!["branch", "--show-current"], repo_path)
         .expect("Couldn't get current branch")
-        .output.get(0)
+        .output
+        .get(0)
         .expect("No output found")
         .to_string()
 }
