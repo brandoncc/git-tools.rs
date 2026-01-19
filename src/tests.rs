@@ -1,26 +1,19 @@
-use crate::{commands::git_command, test_setup::DEFAULT_BRANCH_NAME, worktree::Worktree};
+use crate::{commands::git_command, test_setup::{DEFAULT_BRANCH_NAME, NORMAL_REPO_WITH_WORKTREES_NAME}, worktree::Worktree};
 
 use self::test_helpers::run_test;
 use super::*;
 
 #[test]
-fn test_merged_branches_are_not_deleted_if_working_tree_is_not_clean() {
+fn test_merged_branches_are_deleted_even_if_working_tree_is_not_clean() {
     run_test(
-        "test_merged_branches_are_not_deleted_if_working_tree_is_not_clean",
+        "test_merged_branches_are_deleted_even_if_working_tree_is_not_clean",
         "dirty_repo",
         |repo| {
             let result = repo.clean_merged();
 
-            assert!(result.is_err());
+            assert!(result.is_ok());
 
-            test_helpers::assert_branches(
-                &repo,
-                vec![
-                    DEFAULT_BRANCH_NAME.to_string(),
-                    "merged".to_string(),
-                    "unmerged".to_string(),
-                ],
-            );
+            test_helpers::assert_branch_does_not_exist(&repo, "merged".to_string());
         },
     );
 }
@@ -56,9 +49,9 @@ fn test_unmerged_branches_are_not_deleted() {
 }
 
 #[test]
-fn test_deleting_current_head_branch_leaves_repo_with_main_branch_checked_out() {
+fn test_current_branch_is_skipped_even_if_merged() {
     run_test(
-        "test_deleting_current_head_branch_leaves_repo_with_main_branch_checked_out",
+        "test_current_branch_is_skipped_even_if_merged",
         "clean_repo",
         |repo| {
             git_command(vec!["checkout", "merged"], repo.root())
@@ -69,7 +62,9 @@ fn test_deleting_current_head_branch_leaves_repo_with_main_branch_checked_out() 
             repo.clean_merged()
                 .expect("failed to clean merged branches");
 
-            test_helpers::assert_current_branch(&repo, DEFAULT_BRANCH_NAME.to_string());
+            // Branch should still exist because it's currently checked out
+            test_helpers::assert_branch_exists(&repo, "merged".to_string());
+            test_helpers::assert_current_branch(&repo, "merged".to_string());
         },
     );
 }
@@ -234,6 +229,68 @@ fn test_worktree_list_is_parsed_correctly() {
             ];
 
             assert_eq!(expected, worktrees);
+        },
+    );
+}
+
+// Tests for normal repositories with worktrees
+
+#[test]
+fn test_normal_repo_merged_worktrees_are_removed() {
+    run_test(
+        "test_normal_repo_merged_worktrees_are_removed",
+        NORMAL_REPO_WITH_WORKTREES_NAME,
+        |repo| {
+            test_helpers::assert_worktree_exists(&repo, "merged".to_string());
+
+            repo.clean_merged()
+                .expect("failed to clean merged worktrees");
+
+            test_helpers::assert_worktree_does_not_exist(&repo, "merged".to_string());
+        },
+    );
+}
+
+#[test]
+fn test_normal_repo_unmerged_worktrees_are_not_removed() {
+    run_test(
+        "test_normal_repo_unmerged_worktrees_are_not_removed",
+        NORMAL_REPO_WITH_WORKTREES_NAME,
+        |repo| {
+            repo.clean_merged()
+                .expect("failed to clean merged worktrees");
+
+            test_helpers::assert_worktree_exists(&repo, "unmerged".to_string());
+        },
+    );
+}
+
+#[test]
+fn test_normal_repo_dirty_worktrees_are_not_removed() {
+    run_test(
+        "test_normal_repo_dirty_worktrees_are_not_removed",
+        NORMAL_REPO_WITH_WORKTREES_NAME,
+        |repo| {
+            repo.clean_merged()
+                .expect("failed to clean merged worktrees");
+
+            test_helpers::assert_worktree_exists(&repo, "dirty".to_string());
+        },
+    );
+}
+
+#[test]
+fn test_normal_repo_branches_are_removed_for_worktrees_that_are_removed() {
+    run_test(
+        "test_normal_repo_branches_are_removed_for_worktrees_that_are_removed",
+        NORMAL_REPO_WITH_WORKTREES_NAME,
+        |repo| {
+            test_helpers::assert_branch_exists(&repo, "merged".to_string());
+
+            repo.clean_merged()
+                .expect("failed to clean merged worktrees");
+
+            test_helpers::assert_branch_does_not_exist(&repo, "merged".to_string());
         },
     );
 }

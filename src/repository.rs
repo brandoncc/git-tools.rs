@@ -138,65 +138,106 @@ impl NormalRepository {
     }
 
     fn clean_merged_impl(&self) -> Result<(), String> {
-        self.validate_cleanliness()?;
+        // Fetch origin to ensure we have latest state
+        git_command(vec!["fetch", "origin"], &self.root)
+            .unwrap_or_else(|_| panic!("Failed to fetch from origin"));
 
-        let branches = merged_branches(&self.main_branch_name, &self.root)
+        // Check against origin/main since we fetched but didn't pull
+        let origin_main = format!("origin/{}", self.main_branch_name);
+        let branches = merged_branches(&origin_main, &self.root)
             .expect("couldn't get list of merged branches");
         let current_branch = get_current_branch_name(&self.root);
-
-        let mut deleted_current_branch = false;
-
-        git_command(vec!["checkout", &self.main_branch_name], &self.root).unwrap_or_else(|_| {
-            panic!("Failed to checkout the '{}' branch", self.main_branch_name)
-        });
+        let worktrees = self.get_worktrees();
 
         for branch in branches {
-            git_command(vec!["branch", "-d", branch.as_str()], &self.root).unwrap_or_else(|m| {
-                panic!(
-                    "An error occurred while deleting the '{}' branch\n\n{}",
-                    branch,
-                    m.output.join("\n")
-                )
-            });
-
-            if branch == current_branch {
-                deleted_current_branch = true;
+            // Never delete the main branch
+            if branch == self.main_branch_name {
+                continue;
             }
 
-            println!("Deleted branch: {}", branch);
-        }
+            // Skip the current branch - can't delete without checkout
+            if branch == current_branch {
+                println!("Skipping branch '{}' - currently checked out", branch);
+                continue;
+            }
 
-        if !deleted_current_branch {
-            git_command(vec!["checkout", current_branch.as_str()], &self.root).unwrap_or_else(
-                |_| {
-                    panic!(
-                        "Failed to checkout the original branch ({})",
-                        current_branch
-                    )
-                },
-            );
+            // Check if this branch has a worktree
+            if let Some(worktree_path) = worktrees.get(&branch) {
+                // Check if worktree is clean before removing
+                if !self.is_worktree_clean(worktree_path) {
+                    println!(
+                        "Skipping branch '{}' - worktree at '{}' has uncommitted changes",
+                        branch, worktree_path
+                    );
+                    continue;
+                }
+
+                // Remove the worktree first
+                match git_command(vec!["worktree", "remove", worktree_path], &self.root) {
+                    Ok(_) => println!("Removed worktree: {}", worktree_path),
+                    Err(e) => {
+                        println!(
+                            "Failed to remove worktree '{}': {}",
+                            worktree_path,
+                            e.output.join("\n")
+                        );
+                        continue;
+                    }
+                }
+            }
+
+            // Delete the branch
+            match git_command(vec!["branch", "-d", branch.as_str()], &self.root) {
+                Ok(_) => println!("Deleted branch: {}", branch),
+                Err(e) => {
+                    println!(
+                        "Failed to delete branch '{}': {}",
+                        branch,
+                        e.output.join("\n")
+                    );
+                }
+            }
         }
 
         Ok(())
     }
 
-    fn validate_cleanliness(&self) -> Result<bool, String> {
-        match self.is_clean() {
-            Ok(true) => Ok(true),
-            Ok(false) => Err("Repository has uncommitted changes, please commit, stash, or delete these changes and then try again".to_string()),
-            Err(_) => Err("Repository has uncommitted changes, please commit, stash, or delete these changes and then try again".to_string())
+    /// Get a map of branch name -> worktree path for all worktrees (excluding main working tree)
+    fn get_worktrees(&self) -> std::collections::HashMap<String, String> {
+        let mut worktrees = std::collections::HashMap::new();
+        let root_str = self.root.to_string_lossy().to_string();
+
+        let result = git_command(vec!["worktree", "list"], &self.root);
+        if let Ok(output) = result {
+            for line in output.output {
+                // Format: "/path/to/worktree  abc1234 [branch-name]"
+                if let Some(branch_start) = line.rfind('[') {
+                    if let Some(branch_end) = line.rfind(']') {
+                        let branch = line[branch_start + 1..branch_end].to_string();
+                        // Get the path (everything before the commit hash)
+                        let parts: Vec<&str> = line.split_whitespace().collect();
+                        if !parts.is_empty() {
+                            let path = parts[0].to_string();
+                            // Skip the main working tree
+                            if path != root_str {
+                                worktrees.insert(branch, path);
+                            }
+                        }
+                    }
+                }
+            }
         }
+
+        worktrees
     }
 
-    fn is_clean(&self) -> Result<bool, String> {
-        let result = git_command(vec!["status", "--short"], &self.root);
+    fn is_worktree_clean(&self, worktree_path: &str) -> bool {
+        let path = std::path::PathBuf::from(worktree_path);
+        let result = git_command(vec!["status", "--short"], &path);
 
         match result {
-            Ok(res) => Ok(res.output.is_empty()),
-            Err(res) => Err(format!(
-                "An error occurred while checking if the repo was clean: {}",
-                res.output.join("")
-            )),
+            Ok(res) => res.output.is_empty(),
+            Err(_) => false,
         }
     }
 }
