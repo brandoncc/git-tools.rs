@@ -1,15 +1,12 @@
 use std::path::PathBuf;
 
 use crate::{
+    commands::git_command,
     get_cwd,
     repository::{all_branch_names, Repository},
-    test_setup::{setup, teardown, BARE_REPO_NAME, DUMMY_REPOS_DIRECTORY},
+    test_setup::{setup, teardown, RepoType, BARE_REPO_NAME, DUMMY_REPOS_DIRECTORY, NORMAL_REPO_WITH_WORKTREES_NAME},
     utils::get_current_branch_name,
 };
-
-pub fn assert_branches(repo: &Repository, branches: Vec<String>) {
-    assert_eq!(all_branch_names(repo.root()), branches);
-}
 
 pub fn assert_branch_exists(repo: &Repository, branch: String) {
     assert!(all_branch_names(repo.root()).contains(&branch));
@@ -33,8 +30,8 @@ pub fn assert_worktree_exists(repo: &Repository, worktree_name: String) {
     assert!(worktree_exists(repo, worktree_name))
 }
 
-pub fn run_setup(test_name: &str, bare_repo: bool) {
-    match setup(test_name, bare_repo) {
+pub fn run_setup(test_name: &str, repo_type: RepoType) {
+    match setup(test_name, repo_type) {
         Ok(_) => (),
         Err(msg) => {
             assert!(false, "Test setup failed with error: {}", msg)
@@ -51,9 +48,19 @@ pub fn run_teardown(test_name: &str) {
     }
 }
 
+fn repo_type_from_directory(repo_directory: &str) -> RepoType {
+    if repo_directory == BARE_REPO_NAME {
+        RepoType::Bare
+    } else if repo_directory == NORMAL_REPO_WITH_WORKTREES_NAME {
+        RepoType::NormalWithWorktrees
+    } else {
+        RepoType::Normal
+    }
+}
+
 pub fn run_test(test_name: &str, repo_directory: &str, test: fn(Repository)) {
     // setup must be run before we create the Repository struct or else the repo doesn't exist
-    run_setup(test_name, repo_directory == BARE_REPO_NAME);
+    run_setup(test_name, repo_type_from_directory(repo_directory));
 
     let cwd = get_cwd();
     let cwd_str = cwd.to_str().expect("Couldn't convert cwd to str");
@@ -77,8 +84,15 @@ fn worktree_exists(repo: &Repository, worktree_name: String) -> bool {
 
             worktrees.iter().any(|w| w.name == worktree_name)
         }
-        _ => {
-            panic!("repo is not a bare repo")
+        Repository::Normal(_) => {
+            // For normal repos, check git worktree list output
+            let result = git_command(vec!["worktree", "list"], repo.root())
+                .expect("Couldn't get worktree list");
+
+            result.output.iter().any(|line| {
+                // worktree list output format: "/path/to/worktree  commit [branch]"
+                line.contains(&format!("[{}]", worktree_name))
+            })
         }
     }
 }

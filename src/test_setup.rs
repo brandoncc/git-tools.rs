@@ -3,21 +3,29 @@ use std::{error::Error, process::Command};
 pub const BARE_REPO_NAME: &str = "bare repo  -_^^ with symbols and spaces";
 pub const CLEAN_NORMAL_REPO_NAME: &str = "clean_repo";
 pub const DIRTY_NORMAL_REPO_NAME: &str = "dirty_repo";
+pub const NORMAL_REPO_WITH_WORKTREES_NAME: &str = "normal_repo_with_worktrees";
 pub const DUMMY_REPOS_DIRECTORY: &str = "dummy_repos";
 pub const DEFAULT_BRANCH_NAME: &str = "main";
 
-pub fn setup(test_name: &str, bare_repo: bool) -> Result<(), Box<dyn Error>> {
+pub enum RepoType {
+    Bare,
+    Normal,
+    NormalWithWorktrees,
+}
+
+pub fn setup(test_name: &str, repo_type: RepoType) -> Result<(), Box<dyn Error>> {
     println!("test_name: {:?}", test_name);
-    println!("bare_repo: {:?}", bare_repo);
+    println!("repo_type: {:?}", std::mem::discriminant(&repo_type));
     // make sure we start with a clean slate even of a previous test failed
     teardown(test_name)?;
 
-    match bare_repo {
-        true => {
+    match repo_type {
+        RepoType::Bare => {
             create_bare_repo(test_name)?;
             setup_worktrees(test_name)?;
         }
-        false => create_normal_repos(test_name)?,
+        RepoType::Normal => create_normal_repos(test_name)?,
+        RepoType::NormalWithWorktrees => create_normal_repo_with_worktrees(test_name)?,
     }
 
     Ok(())
@@ -127,6 +135,14 @@ fn create_repository(directory: String) -> Result<(), Box<dyn Error>> {
         .arg("config")
         .arg("user.email")
         .arg("testrunner@local")
+        .current_dir(&directory)
+        .output()?;
+    // Add a remote origin for fetch tests (points to itself)
+    Command::new("git")
+        .arg("remote")
+        .arg("add")
+        .arg("origin")
+        .arg(".")
         .current_dir(&directory)
         .output()?;
     Command::new("git")
@@ -579,6 +595,135 @@ fn delete_dummy_repos(test_name: &str) -> Result<(), Box<dyn Error>> {
     Command::new("rm")
         .arg("-rf")
         .arg(format!("{}/{}", DUMMY_REPOS_DIRECTORY, test_name))
+        .output()?;
+
+    Ok(())
+}
+
+fn create_normal_repo_with_worktrees(test_name: &str) -> Result<(), Box<dyn Error>> {
+    let repo_path = format!(
+        "{}/{}/{}",
+        DUMMY_REPOS_DIRECTORY, test_name, NORMAL_REPO_WITH_WORKTREES_NAME
+    );
+    let worktrees_path = format!(
+        "{}/{}/worktrees",
+        DUMMY_REPOS_DIRECTORY, test_name
+    );
+
+    // Create the main repository
+    create_repository(repo_path.clone())?;
+
+    // Create initial commit
+    Command::new("touch")
+        .arg("README.md")
+        .current_dir(&repo_path)
+        .output()?;
+
+    Command::new("git")
+        .arg("add")
+        .arg("README.md")
+        .current_dir(&repo_path)
+        .output()?;
+
+    Command::new("git")
+        .arg("commit")
+        .arg("-m")
+        .arg("initial commit")
+        .current_dir(&repo_path)
+        .output()?;
+
+    // Create worktrees directory
+    Command::new("mkdir")
+        .arg("-p")
+        .arg(&worktrees_path)
+        .output()?;
+
+    // Create a merged worktree (branch that will be merged into main)
+    Command::new("git")
+        .arg("worktree")
+        .arg("add")
+        .arg("-b")
+        .arg("merged")
+        .arg("../worktrees/merged")
+        .current_dir(&repo_path)
+        .output()?;
+
+    // Add a commit to the merged branch
+    Command::new("touch")
+        .arg("merged-file")
+        .current_dir(format!("{}/merged", worktrees_path))
+        .output()?;
+
+    Command::new("git")
+        .arg("add")
+        .arg("merged-file")
+        .current_dir(format!("{}/merged", worktrees_path))
+        .output()?;
+
+    Command::new("git")
+        .arg("commit")
+        .arg("-m")
+        .arg("add merged file")
+        .current_dir(format!("{}/merged", worktrees_path))
+        .output()?;
+
+    // Create an unmerged worktree
+    Command::new("git")
+        .arg("worktree")
+        .arg("add")
+        .arg("-b")
+        .arg("unmerged")
+        .arg("../worktrees/unmerged")
+        .current_dir(&repo_path)
+        .output()?;
+
+    // Add a commit to the unmerged branch
+    Command::new("touch")
+        .arg("unmerged-file")
+        .current_dir(format!("{}/unmerged", worktrees_path))
+        .output()?;
+
+    Command::new("git")
+        .arg("add")
+        .arg("unmerged-file")
+        .current_dir(format!("{}/unmerged", worktrees_path))
+        .output()?;
+
+    Command::new("git")
+        .arg("commit")
+        .arg("-m")
+        .arg("add unmerged file")
+        .current_dir(format!("{}/unmerged", worktrees_path))
+        .output()?;
+
+    // Create a dirty worktree (has uncommitted changes)
+    Command::new("git")
+        .arg("worktree")
+        .arg("add")
+        .arg("-b")
+        .arg("dirty")
+        .arg("../worktrees/dirty")
+        .current_dir(&repo_path)
+        .output()?;
+
+    // Add uncommitted file to dirty worktree
+    Command::new("touch")
+        .arg("uncommitted-file")
+        .current_dir(format!("{}/dirty", worktrees_path))
+        .output()?;
+
+    // Merge the "merged" branch into main
+    Command::new("git")
+        .arg("merge")
+        .arg("merged")
+        .current_dir(&repo_path)
+        .output()?;
+
+    // Also merge the "dirty" branch into main (so it's merged but has uncommitted changes)
+    Command::new("git")
+        .arg("merge")
+        .arg("dirty")
+        .current_dir(&repo_path)
         .output()?;
 
     Ok(())
